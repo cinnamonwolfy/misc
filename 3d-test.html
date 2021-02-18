@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<!--
+	3D Test, (c)2021 pocketlinux32
+-->
+<html>
+	<head>
+		<title>3D test</title>
+		<style>
+			body {
+				overflow: hidden;
+				background-color: #000000;
+				font-family: Courier New, Monospace;
+				color: #FFFFFF
+			}
+			
+			canvas {
+				background-color: white;
+			}
+		</style>
+	</head>
+	<body onload="main()">
+		<h1>3D Test</h1>
+		<canvas id="main" width=640px height=480>N O</canvas>
+		<script>
+			var canvas = document.getElementById("main");
+			var canvasContext = canvas.getContext("2d");
+			
+			canvas.height = document.documentElement.clientHeight - 90;
+			canvas.width = document.documentElement.clientWidth - 15;
+			
+			var XcoordsFlags = [ true, false, true, false ];
+			const offset = [ (canvas.width/2) - (8*Math.PI), (canvas.height/2) - 8 ];
+			var Xcoords = [ -8*Math.PI, -8*Math.PI, 8*Math.PI, 8*Math.PI ];
+			var view = 32;
+			canvasContext.fillStyle = "#0000FF";
+			
+			function moveXCoords(){
+				for(let i = 0; i < 4; i++){
+					if(Xcoords[i] <= -16*Math.PI){
+						XcoordsFlags[i] = false;
+					}else if(Xcoords[i] >= 16*Math.PI){
+						XcoordsFlags[i] = true;
+					}
+				}
+				for(let i = 0; i < 4; i++){
+					if(!XcoordsFlags[i]){
+						Xcoords[i] += (Math.PI/16);
+					}else{
+						Xcoords[i] -= (Math.PI/16);
+					}
+				}
+			}
+			
+			function main(){
+				canvasContext.clearRect(0,0,canvas.width, canvas.height);
+				moveXCoords();
+				var Ycoords = [ 0, 0, 0, 0 ];
+				for(let i = 0; i < 4; i++){
+					if(XcoordsFlags[i]){
+						Ycoords[i] = -view*Math.cos((Xcoords[i]/32));
+					}else{
+						Ycoords[i] = view*Math.cos((Xcoords[i]/32));
+					}
+					Ycoords[i] += offset[1];
+				}
+				canvasContext.beginPath();
+				canvasContext.moveTo(Xcoords[0]+offset[0], Ycoords[0]);
+				canvasContext.lineTo(Xcoords[1]+offset[0], Ycoords[1]);
+				canvasContext.lineTo(Xcoords[3]+offset[0], Ycoords[3]);
+				canvasContext.lineTo(Xcoords[2]+offset[0], Ycoords[2]);
+				canvasContext.closePath();
+				canvasContext.fill();
+				requestAnimationFrame(main);
+			}
+			
+			document.addEventListener('keydown', function(event){
+				if(event.key == "ArrowUp" && view < 48){
+					view++;
+				}else if(event.key == "ArrowDown" && view > -48){
+					view--;
+				}
+				event.preventDefault();
+			});
+		</script>
+	</body>
+</html>
