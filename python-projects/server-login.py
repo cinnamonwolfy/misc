@@ -3,8 +3,7 @@
 # server-login.py, A server-side login checker
 # (c) 2021 pocketlinux32, Under GPLv3
 #
-# This script requires the setuid bit to be set to
-# function properly. Or you could just run it as root.
+# This script requires to be ran as root.
 #
 
 import sys, crypt, spwd, os
