@@ -26,8 +26,10 @@ def commandParser(command, option):
 		else:
 			exit(2)
 	elif str(command) == "chdrive":
-		while drives = driveList.readline():
-			if option = drives:
+		drives = "start"
+		while drives:
+			drives = driveList.readline()
+			if option == drives:
 				currentDrive = option
 				break
 	elif str(command) == "mkdir":
