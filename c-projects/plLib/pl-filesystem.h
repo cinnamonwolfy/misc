@@ -16,7 +16,12 @@ struct plDir {
 	unsigned int amtEntries;
 }
 
-void plDeallocPlDir(struct plDir* dirInfo){
+struct plFile {
+	char** buffer;
+	FILE* fileObject;
+}
+
+void plDeallocDirInfo(struct plDir* dirInfo){
 	dirInfo.dirPath = NULL;
 	dirInfo.amtEntries = NULL;
 	free(dirInfo.dirEntries);
@@ -49,3 +54,5 @@ struct plDir* plGetDirInfo(const char* path){
 
 	return returnStruct;
 }
+
+void
