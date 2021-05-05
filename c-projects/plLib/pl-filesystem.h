@@ -17,19 +17,21 @@ struct plDir {
 	size_t amtEntries; // amount of entries
 }
 
+// plFile: File/Stringstream Structure
 struct plFile {
-	char** buffer;
-	size_t bufferSize;
-	FILE* fileObject;
+	char** buffer; // data buffer
+	size_t bufferSize; // data buffer size
+	FILE* fileObject; // Stream object
 }
 
-void plDeallocDirInfo(struct plDir* dirInfo){
+// 
+void plDeallocDirObj(struct plDir* dirInfo){
 	dirInfo.dirPath = NULL;
 	dirInfo.amtEntries = NULL;
 	free(dirInfo.dirEntries);
 }
 
-struct plDir* plGetDirInfo(const char* path){
+struct plDir* plCreateDirObj(const char* path){
 	DIR* tempDir = opendir(path);
 	static char** list;
 	size_t amount = 0;
@@ -58,7 +60,7 @@ struct plDir* plGetDirInfo(const char* path){
 	return returnStruct*;
 }
 
-struct plFile* plFileStream(const char* buf, size_t bufSize, bool isStringStream, const char* path){
+struct plFile* plCreateFileStream(const char* buf, size_t bufSize, bool isStringStream, const char* path){
 	FILE* tempFile;
 	struct plFile returnStruct;
 	if(isStringStream){
