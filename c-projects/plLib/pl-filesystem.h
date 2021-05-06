@@ -10,27 +10,28 @@
 #include <sys/stat.h>
 #include <dirent.h>
 
-// plDir: Directory Structure
+// plDir: Directory structure
 struct plDir {
 	char* dirPath; // directory path
 	char** dirEntries; // memory-allocated listing of directory
 	size_t amtEntries; // amount of entries
 }
 
-// plFile: File/Stringstream Structure
+// plFile: File/Stringstream structure
 struct plFile {
 	char** buffer; // data buffer
 	size_t bufferSize; // data buffer size
 	FILE* fileObject; // Stream object
 }
 
-// 
+// plDeallocDirObj(): Deallocates the plDir structure
 void plDeallocDirObj(struct plDir* dirInfo){
 	dirInfo.dirPath = NULL;
 	dirInfo.amtEntries = NULL;
 	free(dirInfo.dirEntries);
 }
 
+// plCreateDirObj(): Creates a plDir structure containing a directory listing
 struct plDir* plCreateDirObj(const char* path){
 	DIR* tempDir = opendir(path);
 	static char** list;
@@ -60,6 +61,7 @@ struct plDir* plCreateDirObj(const char* path){
 	return returnStruct*;
 }
 
+// plCreateFileStream(): Creates a plFile object containing the contents of a file, or a stringstream
 struct plFile* plCreateFileStream(const char* buf, size_t bufSize, bool isStringStream, const char* path){
 	FILE* tempFile;
 	struct plFile returnStruct;
