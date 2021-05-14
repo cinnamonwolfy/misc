@@ -37,7 +37,7 @@ struct plDir* plCreateDirObj(const char* path){
 	static char** list;
 	size_t amount = 0;
 	int i = 0;
-	struct plDir returnStruct;
+	static struct plDir returnStruct;
 	struct dirent* tempFileStruct;
 
 	while(tempFileStruct = readdir(tempDir)){
@@ -64,7 +64,7 @@ struct plDir* plCreateDirObj(const char* path){
 // plCreateFileStream(): Creates a plFile object containing the contents of a file, or a stringstream
 struct plFile* plCreateFileStream(const char* buf, size_t bufSize, bool isStringStream, const char* path){
 	FILE* tempFile;
-	struct plFile returnStruct;
+	static struct plFile returnStruct;
 	if(isStringStream){
 		tempFile = open_memstream(buf*, bufSize*);
 	}else{
