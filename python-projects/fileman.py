@@ -12,6 +12,10 @@ def commandParser(command, option):
 	driveList = open("/run/server-process/drives", "r")
 	currentDrive = statFile.readline()
 	currentPath = statFile.readline()
+	if currentDrive == "" or currentPath == "":
+		currentDrive = driveList.readline()
+		currentPath = "/"
+		driveList.seek(0)
 	currentRoot = "/mnt" + currentDrive
 
 	if option[0] == "/":
@@ -21,7 +25,7 @@ def commandParser(command, option):
 		os.chdir(currentRoot + currentPath)
 
 	if str(command) == "cd":
-		if os.path.exists(option):
+		if os.path.exists(option) && option == "":
 			os.chdir(option)
 		else:
 			exit(2)
@@ -43,6 +47,9 @@ def commandParser(command, option):
 				os.remove(option)
 			elif os.isdir(option):
 				shutil.rmtree(option)
+	statFile.seek(0)
+	if statFile.readline() == "" or currentRoot + currentPath[:currentPath.rfind("/") - 1] != os.getcwd():
+		
 
 if __name__ == "__main__":
 	if len(sys.argv) < 3:

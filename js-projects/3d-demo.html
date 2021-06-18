@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<!--
+	3D Demo, (c)2021 pocketlinux32
+-->
+<html>
+	<head>
+		<title>3D test</title>
+		<style>
+			body {
+				overflow: hidden;
+				background-color: #000000;
+				font-family: Courier New, Monospace;
+				color: #FFFFFF
+			}
+			
+			canvas {
+				background-color: white;
+			}
+		</style>
+	</head>
+	<body onload="main()">
+		<h1>3D Test</h1>
+		<canvas id="main" width=640px height=480>N O</canvas>
+		<script>
+			var mainSystem = {
+				canvas: document.getElementById("main"),
+				canvasContext: document.getElementById("main").getContext("2d"),
+				offset: [ 0, 0 ],
+				init: function(){
+					this.offset[0] = document.getElementById("main").height / 2;
+					this.offset[1] = document.getElementById("main").width / 2;
+				}
+			}
+
+			var systemViewfinder = {
+				x: 0,
+				y: 50,
+				z: 0
+			}
+
+			class vertex{
+				constructor(xC, yC, zC){
+					this.x = xC * Math.PI;
+					this.y = yC * Math.PI;
+					this.z = zC * Math.PI;
+				}
+
+				projectCoords(){
+					if(this.z > 0 || this.z < 0){
+						return [ (this.x - systemViewfinder.x)/(this.z - systemViewfinder.z) + mainSystem.offset[0], (this.y - systemViewfinder.y)/(this.z - systemViewfinder.z) + mainSystem.offset[1] ];
+					}else{
+						return [ (this.x - systemViewfinder.x)/(1 - systemViewfinder.z) + mainSystem.offset[0], (this.y - systemViewfinder.y)/(1 - systemViewfinder.z) + mainSystem.offset[1] ];
+					}
+				}
+			}
+
+			class plane{
+				constructor(xC, yC, zC, width, depth){
+					this.mainCoords = [ new vertex(xC - (width/2), yC, zC - (depth/2)), new vertex(xC + (width/2), yC, zC - (depth/2)), new vertex(xC - (width/2), yC, zC + (depth/2)), new vertex(xC + (width/2), yC, zC + (depth/2)) ];
+					this.interfaceCoords = [ xC, yC, zC ];
+					this.dimensions = [ width, 0, depth ];
+				}
+
+				render(){
+					var tempProjectCoords = [ this.mainCoords[0].projectCoords(), this.mainCoords[1].projectCoords(), this.mainCoords[2].projectCoords(), this.mainCoords[3].projectCoords() ];
+					mainSystem.canvasContext.fillStyle = "#FF0000";
+					mainSystem.canvasContext.beginPath();
+					mainSystem.canvasContext.moveTo(tempProjectCoords[0][0], tempProjectCoords[0][1]);
+					mainSystem.canvasContext.lineTo(tempProjectCoords[1][0], tempProjectCoords[1][1]);
+					mainSystem.canvasContext.lineTo(tempProjectCoords[2][0], tempProjectCoords[2][1]);
+					mainSystem.canvasContext.lineTo(tempProjectCoords[3][0], tempProjectCoords[3][1]);
+					mainSystem.canvasContext.closePath();
+					mainSystem.canvasContext.stroke();
+					mainSystem.canvasContext.fill();
+				}
+			}
+
+			mainSystem.init();
+			var testPlane = new plane(0, 0, 0, 100, 100);
+
+			function main(){
+				mainSystem.canvasContext.clearRect(0, 0, mainSystem.canvas.width, mainSystem.canvas.height);
+				testPlane.render();
+				window.requestAnimationFrame(main);
+			}
+			
+			document.addEventListener('keydown', function(event){
+				switch(event.key){
+					case "W":
+					case "ArrowUp":
+						systemViewfinder.z+=Math.PI;
+						break;
+					case "A":
+					case "ArrowLeft":
+						systemViewfinder.x-=Math.PI;
+						break;
+					case "S":
+					case "ArrowDown":
+						systemViewfinder.z-=Math.PI;
+						break;
+					case "D":
+					case "ArrowRight":
+						systemViewfinder.x+=Math.PI;
+						break;
+					case " ":
+					case "Space":
+						systemViewfinder.y-=Math.PI;
+						break;
+					case "Shift":
+						systemViewfinder.y+=Math.PI;
+						break;
+				}
+				event.preventDefault();
+			});
+		</script>
+	</body>
+</html>
