@@ -25,21 +25,52 @@ int main(int argc, const char* argv[]){
 	}
 
 	double result = 0;
+	double numbers[argc / 2];
+	char ops[argc / 2 - 1];
 
-	for(int i = 1; i < argc - 1; i+=2){
-		double numbers[2];
-		if(i == 1){
-			numbers[0] = atof(argv[i]);
-			numbers[1] = atof(argv[i + 2]);
-		}else{
-			numbers[0] = result;
-			numbers[1] = atof(argv[i + 2]);
+	for(int i = 0; i < argc / 2; i++){
+		numbers[i] = atof(argv[1 + (i * 2)]);
+		if(i < argc / 2 - 1){
+			ops[i] = argv[2 + (i * 2)][0];
 		}
-		result = calculate(numbers, argv[i + 1][0]);
 	}
 
-//	double numbers[2] = {atof(argv[1]), atof(argv[3])};
-//	double result = calculate(numbers, argv[2][0]);
+	for(int i = 0; i < argc / 2 - 1; i++){
+		if(ops[i] == '*' || ops[i] == '/'){
+			if(ops[i - 1] == '*' || ops[i - 1] == '/'){
+				double tempNums[2] = {result, numbers[i + 1]};
+				result = calculate(tempNums, ops[i]);
+				numbers[i + 1] = 0;
+			}else if(argc / 2 - 1 == 1 || i == 0){
+				double tempNums[2] = {numbers[i], numbers[i + 1]};
+				result = calculate(tempNums, ops[i]);
+			}else{
+				double tempNums[2] = {numbers[i], numbers[i + 1]};
+				if(ops[i - 1] == '-'){
+					result -= calculate(tempNums, ops[i]);
+				}else if(ops[i - 1] == '+'){
+					result += calculate(tempNums, ops[i]);
+				}else{
+					printf("Error: Unsupported operation: %c", ops[i]);
+					exit(2);
+				}
+				numbers[i] = 0;
+				numbers[i + 1] = 0;
+			}
+		}
+	}
+
+	for(int i = 0; i < argc / 2 - 1; i++){
+		if(ops[i] == '+' || ops[i] == '-'){
+			if(result == 0 || i == 0){
+				double tempNums[2] = {numbers[i], numbers[i + 1]};
+				result += calculate(tempNums, ops[i]);
+			}else{
+				double tempNums[2] = {result, numbers[i + 1]};
+				result = calculate(tempNums, ops[i]);
+			}
+		}
+	}
 
 	printf("%f\n", result);
 	exit(0);
