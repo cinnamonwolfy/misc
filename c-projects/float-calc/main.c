@@ -37,7 +37,7 @@ int main(int argc, const char* argv[]){
 
 	for(int i = 0; i < argc / 2 - 1; i++){
 		if(ops[i] == '*' || ops[i] == '/'){
-			if(ops[i - 1] == '*' || ops[i - 1] == '/'){
+			if(i != 0 && (ops[i - 1] == '*' || ops[i - 1] == '/')){
 				double tempNums[2] = {result, numbers[i + 1]};
 				result = calculate(tempNums, ops[i]);
 				numbers[i + 1] = 0;
