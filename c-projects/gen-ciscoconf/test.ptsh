@@ -1,0 +1,11 @@
+#!/usr/bin/gen-ciscoconf
+
+hostname S1
+enable_passwd cisco
+enable_secret class
+line_passwd cisco
+
+vlan 100 Clients f0/6
+vlan 200 Management noport
+vlan 999 Parking_Lot f0/1-4,f0/7-24
+vlan 1000 Native noport
