@@ -1,5 +1,5 @@
 /************************************\
-* gen-ciscoconf, v0.32               *
+* gen-ciscoconf, v0.33               *
 * (c)2021 pocketlinux32, Under GPLv3 *
 * Source file                        *
 \************************************/
@@ -173,7 +173,7 @@ int main(int argc, const char* argv[]){
 				config.filename = argv[i + 1];
 				i++;
 			}else if(strcmp(argv[i], "--help") == 0){
-				printf("Cisco Config Generator, Version 0.32\n");
+				printf("Cisco Config Generator, Version 0.33\n");
 				printf("(c)2021 pocketlinux32, Under GPLv3\n\n");
 				printf("Usage: %s [ --help | -o OUTPUT_FILE ] SOURCE_FILE \n\n", argv[0]);
 				printf("--help		Shows this help\n");
@@ -196,21 +196,20 @@ int main(int argc, const char* argv[]){
 
 		while(fgets(readLine, size, sourceFileStream) != NULL){
 			char* argArr[4];
-			for(int i = 0; i < 4; i++){
-				argArr[i] =  malloc(32 * sizeof(char));
-			}
-
 			char* workPtr = strtok(readLine, " \n");
 
 			for(int i = 0; i < 4; i++){
-				if(workPtr != NULL && strlen(workPtr) < 32){
+				if(workPtr != NULL){
+					argArr[i] =  malloc((strlen(workPtr) + 1) * sizeof(char));
 					strcpy(argArr[i], workPtr);
 				}else{
+					argArr[i] = malloc(2 * sizeof(char));
 					strcpy(argArr[i], "#");
 				}
 
 				workPtr = strtok(NULL, " \n");
 			}
+
 
 			configParser(argArr);
 		}
