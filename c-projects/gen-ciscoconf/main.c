@@ -17,22 +17,22 @@
 
 // Cisco VLAN table struct
 typedef struct ciscovlantable {
-	char** ids;
-	char** names;
-	char** ports;
-	size_t size;
+	char** ids;			// ID array
+	char** names;			// Name array
+	char** ports;			// Ports array
+	char** mode			// Port mode array
+	size_t size;			// Size of Vlan Database
 } ciscovlantable_t;
 
 // Cisco device config struct
 typedef struct ciscoconf {
-	char* filename;		// Filename of output file. Default is NULL
-	char* hostname;		// Hostname of device. Default is 'default'
-	char* enable_password;	// Enable password
-	char* enable_secret;	// Enable secret
-	char* line_password;	// Console line password
-	ciscovlantable_t vlan;	// Vlan database
-	char** etherchannels;	// EtherChannel database
-	size_t etherSize;	// EtherChannel database size
+	char* filename;			// Filename of output file. Default is NULL
+	char* hostname;			// Hostname of device. Default is 'default'
+	char* enable_password;		// Enable password
+	char* enable_secret;		// Enable secret
+	char* line_password;		// Console line password
+	ciscovlantable_t vlan;		// Vlan database
+	ciscovlantable_t etherchannel;	// EtherChannel database
 } ciscoconf_t;
 
 ciscovlantable_t createVlanTableStruct(){
@@ -53,8 +53,6 @@ ciscoconf_t createConfigStruct(){
 	returnStruct.enable_password = NULL;
 	returnStruct.enable_secret = NULL;
 	returnStruct.line_password = NULL;
-	returnStruct.etherchannels = NULL;
-	returnStruct.etherSize = 0;
 
 	return returnStruct;
 }
@@ -102,36 +100,53 @@ int configParser(char* args[]){
 		config.enable_secret = args[1];
 	}else if(strcmp(args[0], "line_passwd") == 0){
 		config.line_password = args[1];
-	}else if(strcmp(args[0], "vlan") == 0){
+	}else if(strcmp(args[0], "vlan") == 0 || strcmp(args[0], "ether") == 0){
 		if(args[1] == NULL){
 			return 1;
 		}
 
-		config.vlan.size++;
+		ciscovlantable_t* reference;
 
-		if(config.vlan.size < 2){
-			config.vlan.ids = malloc(2 * sizeof(char*));
-			config.vlan.names = malloc(2 * sizeof(char*));
-			config.vlan.ports = malloc(2 * sizeof(char*));
+		if(strcmp(args[0], "vlan"){
+			reference = &config.vlan;
 		}else{
-			size_t reallocSize = config.vlan.size * sizeof(char*);
-			void* tempPtr[3] = { realloc(config.vlan.ids, reallocSize), realloc(config.vlan.names, reallocSize), realloc(config.vlan.ports, reallocSize) };
+			reference = &config.etherchannel;
+		}
 
-			for(int i = 0; i < 3; i++){
+		reference->size++;
+
+		if(reference->size < 2){
+			reference->ids = malloc(2 * sizeof(char*));
+			reference->names = malloc(2 * sizeof(char*));
+			reference->ports = malloc(2 * sizeof(char*));
+			reference->mode = malloc(2 * sizeof(char*));
+		}else{
+			size_t reallocSize = reference->size * sizeof(char*);
+			void* tempPtr[4] = { realloc(reference->ids, reallocSize), realloc(reference->names, reallocSize), realloc(reference->ports, reallocSize), realloc(reference->mode, reallocSize) };
+
+			for(int i = 0; i < 4; i++){
 				if(!tempPtr[i]){
 					printf("Call to realloc() failed. Aborting...\n");
 					exit(1);
 				}
 			}
 
-			config.vlan.ids = tempPtr[0];
-			config.vlan.names = tempPtr[1];
-			config.vlan.ports = tempPtr[2];
+			reference->ids = tempPtr[0];
+			reference->names = tempPtr[1];
+			reference->ports = tempPtr[2];
+			reference->mode = tempPtr[3];
 		}
 
-		config.vlan.ids[config.vlan.size - 1] = args[1];
-		config.vlan.names[config.vlan.size - 1] = args[2];
-		config.vlan.ports[config.vlan.size - 1] = args[3];
+		reference->ids[reference->size - 1] = args[1];
+		if(strcmp(args[0])){
+			reference->names[reference->size - 1] = args[2];
+			reference->ports[reference->size - 1] = args[3];
+			reference->mode[reference->size - 1] = args[4];
+		}else{
+			reference->names[reference->size - 1] = args[4];
+			reference->ports[reference->size - 1] = args[2];
+			reference->mode[reference->size - 1] = args[3];
+		}
 	}else{
 		printf("Unknown command");
 		return 1;
@@ -166,6 +181,7 @@ int main(int argc, const char* argv[]){
 
 	config = createConfigStruct();
 	config.vlan = createVlanTableStruct();
+	config.entherchannel = createVlanTableStruct();
 
 	if(argc > 1){
 		for(int i = 0; i < argc; i++){
@@ -195,10 +211,10 @@ int main(int argc, const char* argv[]){
 		size_t size = 256;
 
 		while(fgets(readLine, size, sourceFileStream) != NULL){
-			char* argArr[4];
+			char* argArr[5];
 			char* workPtr = strtok(readLine, " \n");
 
-			for(int i = 0; i < 4; i++){
+			for(int i = 0; i < 5; i++){
 				if(workPtr != NULL){
 					argArr[i] =  malloc((strlen(workPtr) + 1) * sizeof(char));
 					strcpy(argArr[i], workPtr);
@@ -219,6 +235,7 @@ int main(int argc, const char* argv[]){
 
 	printConfigStruct(&config);
 	printVlanTableStruct(&config.vlan);
+	printVlanTableStruct(&config.etherchannel);
 	printf("Generating config file...");
 
 	if(!config.filename){
@@ -255,19 +272,36 @@ int main(int argc, const char* argv[]){
 		for(int i = 0; i < config.vlan.size; i++){
 			fprintf(containerFileStream, "vlan %s\n", config.vlan.ids[i]);
 
-			if(config.vlan.ids[i] == NULL || strcmp(config.vlan.names[i], "noname") != 0)
+			if(config.vlan.names[i] != NULL && strcmp(config.vlan.names[i], "noname") != 0)
 				fprintf(containerFileStream, "name %s\n", config.vlan.names[i]);
 
 			fprintf(containerFileStream, "exit\n");
 
-			if(config.vlan.ids[i] == NULL || strcmp(config.vlan.ports[i], "noport") != 0)
-				fprintf(containerFileStream, "int range %s\nswitchport mode access\nswitchport access vlan %s\nexit\n", config.vlan.ports[i], config.vlan.ids[i]);
+			if((config.vlan.ports[i] != NULL && strcmp(config.vlan.ports[i], "noport") != 0)){
+				char* tempMode = "access";
+
+				if(config.vlan.mode[i] != NULL && strcmp(config.vlan.mode[i], "nomode") != 0){
+					tempMode = config.vlan.mode[i];
+				}
+
+				fprintf(containerFileStream, "int range %s\nswitchport mode %s\nswitchport %s vlan %s\nexit\n", config.vlan.ports[i], tempMode, tempMode, config.vlan.ids[i]);
+			}
 
 		}
 	}
 
-	if(config.etherchannels){
-		// TODO: Some funny needs to be added here...
+	if(config.etherchannel.size > 0){
+		for(int i = 0; i < config.etherchannel.size; i++){
+			if(config.etherchannel.ports[i] != NULL && strcmp(config.etherchannel.ports[i], "noport") != 0){
+				char* tempMode = "on";
+
+				if(){
+					
+				}
+
+				fprintf(containerFileStream, "int range %s\nchannel-group %s mode %s\n", config.etherchannel.ports[i], config.etherchannel.mode[i]);
+			}
+		}
 	}
 
 	fprintf(containerFileStream, "exit\n");
