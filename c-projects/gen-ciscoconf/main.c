@@ -1,5 +1,5 @@
 /************************************\
-* gen-ciscoconf, v0.33               *
+* gen-ciscoconf, v0.52               *
 * (c)2021 pocketlinux32, Under GPLv3 *
 * Source file                        *
 \************************************/
@@ -20,7 +20,7 @@ typedef struct ciscovlantable {
 	char** ids;			// ID array
 	char** names;			// Name array
 	char** ports;			// Ports array
-	char** mode			// Port mode array
+	char** mode;			// Port mode array
 	size_t size;			// Size of Vlan Database
 } ciscovlantable_t;
 
@@ -63,7 +63,6 @@ void printConfigStruct(ciscoconf_t* structptr){
 	printf("Enable Passsword: %s\n", structptr->enable_password);
 	printf("Enable Secret: %s\n", structptr->enable_secret);
 	printf("Line Password: %s\n", structptr->line_password);
-	printf("Amount of Etherchannels: %ld\n", structptr->etherSize);
 }
 
 void printVlanTableStruct(ciscovlantable_t* structptr){
@@ -73,6 +72,7 @@ void printVlanTableStruct(ciscovlantable_t* structptr){
 		printf("Vlan %s:\n", structptr->ids[i]);
 		printf("	Name: %s\n", structptr->names[i]);
 		printf("	Port(s): %s\n", structptr->ports[i]);
+		printf("	Mode: %s\n", structptr->mode[i]);
 	}
 }
 
@@ -107,7 +107,7 @@ int configParser(char* args[]){
 
 		ciscovlantable_t* reference;
 
-		if(strcmp(args[0], "vlan"){
+		if(strcmp(args[0], "vlan") == 0){
 			reference = &config.vlan;
 		}else{
 			reference = &config.etherchannel;
@@ -138,7 +138,7 @@ int configParser(char* args[]){
 		}
 
 		reference->ids[reference->size - 1] = args[1];
-		if(strcmp(args[0])){
+		if(strcmp(args[0], "vlan") == 0){
 			reference->names[reference->size - 1] = args[2];
 			reference->ports[reference->size - 1] = args[3];
 			reference->mode[reference->size - 1] = args[4];
@@ -148,7 +148,7 @@ int configParser(char* args[]){
 			reference->mode[reference->size - 1] = args[3];
 		}
 	}else{
-		printf("Unknown command");
+		printf("Unknown command\n");
 		return 1;
 	}
 }
@@ -178,27 +178,38 @@ void interactiveShell(){
 int main(int argc, const char* argv[]){
 	FILE* containerFileStream;
 	FILE* sourceFileStream;
+	char* containerFilename = NULL;
+	bool parseOnly = false, verbose = false;
+	char* month[] = { "jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec" };
 
 	config = createConfigStruct();
 	config.vlan = createVlanTableStruct();
-	config.entherchannel = createVlanTableStruct();
+	config.etherchannel = createVlanTableStruct();
 
 	if(argc > 1){
-		for(int i = 0; i < argc; i++){
+		for(int i = 1; i < argc; i++){
 			if(strcmp(argv[i], "-o") == 0){
 				config.filename = argv[i + 1];
 				i++;
-			}else if(strcmp(argv[i], "--help") == 0){
-				printf("Cisco Config Generator, Version 0.33\n");
+			}else if(strcmp(argv[i], "-h") == 0){
+				printf("Cisco Config Generator, Version 0.52\n");
 				printf("(c)2021 pocketlinux32, Under GPLv3\n\n");
 				printf("Usage: %s [ --help | -o OUTPUT_FILE ] SOURCE_FILE \n\n", argv[0]);
-				printf("--help		Shows this help\n");
-				printf("-o		Outputs generated config to OUTPUT_FILE\n\n");
+				printf("-h		Shows this help\n");
+				printf("-o		Outputs generated config to OUTPUT_FILE\n");
+				printf("-v		Shows parsed config\n");
+				printf("-p		Only parses the source file/commands, doesn't output config file. Requires -v\n\n");
 				return 0;
+			}else if(strcmp(argv[i], "-v") == 0){
+				verbose = true;
+			}else if(strcmp(argv[i], "-p") == 0){
+				parseOnly = true;
+			}else if(containerFilename == NULL){
+				containerFilename = argv[i];
 			}
 		}
 
-		sourceFileStream = fopen(argv[argc - 1], "r");
+		sourceFileStream = fopen(containerFilename, "r");
 	}else{
 		sourceFileStream = NULL;
 	}
@@ -207,6 +218,7 @@ int main(int argc, const char* argv[]){
 		printf("Initializing interactive shell\n");
 		interactiveShell();
 	}else{
+		printf("Source file: %s\n", containerFilename);
 		char readLine[256];
 		size_t size = 256;
 
@@ -233,9 +245,16 @@ int main(int argc, const char* argv[]){
 		fclose(sourceFileStream);
 	}
 
-	printConfigStruct(&config);
-	printVlanTableStruct(&config.vlan);
-	printVlanTableStruct(&config.etherchannel);
+	if(verbose){
+		printConfigStruct(&config);
+		printVlanTableStruct(&config.vlan);
+		printVlanTableStruct(&config.etherchannel);
+
+		if(parseOnly){
+			exit(0);
+		}
+	}
+
 	printf("Generating config file...");
 
 	if(!config.filename){
@@ -250,7 +269,7 @@ int main(int argc, const char* argv[]){
 	struct tm timeStruct = *localtime(&timePtr);
 
 	fprintf(containerFileStream, "enable\nconfig t\n");
-	fprintf(containerFileStream, "clock set %d/%d/%d %d:%d:%d\n", timeStruct.tm_mday, timeStruct.tm_mon + 1, timeStruct.tm_year + 1900, timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec);
+	fprintf(containerFileStream, "clock set %d:%d:%d %d %s %d\n", timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec, timeStruct.tm_mday, month[timeStruct.tm_mon], timeStruct.tm_year + 1900);
 
 	if(config.hostname)
 		fprintf(containerFileStream, "hostname %s\n", config.hostname);
@@ -272,17 +291,16 @@ int main(int argc, const char* argv[]){
 		for(int i = 0; i < config.vlan.size; i++){
 			fprintf(containerFileStream, "vlan %s\n", config.vlan.ids[i]);
 
-			if(config.vlan.names[i] != NULL && strcmp(config.vlan.names[i], "noname") != 0)
+			if(strcmp(config.vlan.names[i],"#") != 0 && strcmp(config.vlan.names[i], "noname") != 0)
 				fprintf(containerFileStream, "name %s\n", config.vlan.names[i]);
 
 			fprintf(containerFileStream, "exit\n");
 
-			if((config.vlan.ports[i] != NULL && strcmp(config.vlan.ports[i], "noport") != 0)){
+			if(strcmp(config.vlan.ports[i],"#") != 0 && strcmp(config.vlan.ports[i], "noport") != 0){
 				char* tempMode = "access";
 
-				if(config.vlan.mode[i] != NULL && strcmp(config.vlan.mode[i], "nomode") != 0){
+				if(strcmp(config.vlan.mode[i],"#") != 0 && strcmp(config.vlan.mode[i], "nomode") != 0)
 					tempMode = config.vlan.mode[i];
-				}
 
 				fprintf(containerFileStream, "int range %s\nswitchport mode %s\nswitchport %s vlan %s\nexit\n", config.vlan.ports[i], tempMode, tempMode, config.vlan.ids[i]);
 			}
@@ -292,14 +310,14 @@ int main(int argc, const char* argv[]){
 
 	if(config.etherchannel.size > 0){
 		for(int i = 0; i < config.etherchannel.size; i++){
-			if(config.etherchannel.ports[i] != NULL && strcmp(config.etherchannel.ports[i], "noport") != 0){
+			if(strcmp(config.etherchannel.ports[i], "#") != 0 && strcmp(config.etherchannel.ports[i], "noport") != 0){
 				char* tempMode = "on";
 
-				if(){
-					
+				if(strcmp(config.etherchannel.mode[i], "#") != 0 || strcmp(config.etherchannel.mode[i], "nomode") != 0){
+					tempMode = config.etherchannel.mode[i];
 				}
 
-				fprintf(containerFileStream, "int range %s\nchannel-group %s mode %s\n", config.etherchannel.ports[i], config.etherchannel.mode[i]);
+				fprintf(containerFileStream, "int range %s\nchannel-group %s mode %s\n", config.etherchannel.ports[i], config.etherchannel.ids[i], tempMode);
 			}
 		}
 	}
