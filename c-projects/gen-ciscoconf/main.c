@@ -1,5 +1,5 @@
 /************************************\
-* gen-ciscoconf, v0.52               *
+* gen-ciscoconf, v0.53               *
 * (c)2021 pocketlinux32, Under GPLv3 *
 * Source file                        *
 \************************************/
@@ -192,9 +192,9 @@ int main(int argc, const char* argv[]){
 				config.filename = argv[i + 1];
 				i++;
 			}else if(strcmp(argv[i], "-h") == 0){
-				printf("Cisco Config Generator, Version 0.52\n");
+				printf("Cisco Config Generator, Version 0.53\n");
 				printf("(c)2021 pocketlinux32, Under GPLv3\n\n");
-				printf("Usage: %s [ --help | -o OUTPUT_FILE ] SOURCE_FILE \n\n", argv[0]);
+				printf("Usage: %s [ --help | -o OUTPUT_FILE | -p | -v ] SOURCE_FILE \n\n", argv[0]);
 				printf("-h		Shows this help\n");
 				printf("-o		Outputs generated config to OUTPUT_FILE\n");
 				printf("-v		Shows parsed config\n");
