@@ -1,5 +1,5 @@
 /************************************\
-* gen-ciscoconf, v0.53               *
+* gen-ciscoconf, v0.54               *
 * (c)2021 pocketlinux32, Under GPLv3 *
 * Source file                        *
 \************************************/
@@ -35,6 +35,7 @@ typedef struct ciscoconf {
 	ciscovlantable_t etherchannel;	// EtherChannel database
 } ciscoconf_t;
 
+// Create a ciscovlantabe_t with default values
 ciscovlantable_t createVlanTableStruct(){
 	ciscovlantable_t returnStruct;
 	returnStruct.ids = NULL;
@@ -45,6 +46,7 @@ ciscovlantable_t createVlanTableStruct(){
 	return returnStruct;
 }
 
+// Create a ciscoconf_t with default values
 ciscoconf_t createConfigStruct(){
 	ciscoconf_t returnStruct;
 
@@ -57,6 +59,7 @@ ciscoconf_t createConfigStruct(){
 	return returnStruct;
 }
 
+// Print the contents of a ciscoconf_t struct
 void printConfigStruct(ciscoconf_t* structptr){
 	printf("Output File: %s\n", structptr->filename);
 	printf("Hostname: %s\n", structptr->hostname);
@@ -65,6 +68,7 @@ void printConfigStruct(ciscoconf_t* structptr){
 	printf("Line Password: %s\n", structptr->line_password);
 }
 
+// Print the contents of a ciscovlantable_t struct
 void printVlanTableStruct(ciscovlantable_t* structptr){
 	printf("Amount of Vlans: %ld\n", structptr->size);
 
@@ -76,6 +80,7 @@ void printVlanTableStruct(ciscovlantable_t* structptr){
 	}
 }
 
+// Create a file stream for the output file. Incomplete
 FILE* createFileStream(bool isStringStream, char* filename){
 	if(isStringStream){
 		return NULL;
@@ -87,6 +92,7 @@ FILE* createFileStream(bool isStringStream, char* filename){
 
 ciscoconf_t config;
 
+// Parses a tokenized source line
 int configParser(char* args[]){
 	if(args[0] == NULL || strchr(args[0], '#') != NULL){
 		return 0;
@@ -153,6 +159,7 @@ int configParser(char* args[]){
 	}
 }
 
+// Interactive shell that gets ran every single time a source file isn't given
 void interactiveShell(){
 	bool run = true;
 	char input[256] = " ";
@@ -192,7 +199,7 @@ int main(int argc, const char* argv[]){
 				config.filename = argv[i + 1];
 				i++;
 			}else if(strcmp(argv[i], "-h") == 0){
-				printf("Cisco Config Generator, Version 0.53\n");
+				printf("Cisco Config Generator, Version 0.54\n");
 				printf("(c)2021 pocketlinux32, Under GPLv3\n\n");
 				printf("Usage: %s [ --help | -o OUTPUT_FILE | -p | -v ] SOURCE_FILE \n\n", argv[0]);
 				printf("-h		Shows this help\n");
@@ -268,8 +275,7 @@ int main(int argc, const char* argv[]){
 	time_t timePtr = time(NULL);
 	struct tm timeStruct = *localtime(&timePtr);
 
-	fprintf(containerFileStream, "enable\nconfig t\n");
-	fprintf(containerFileStream, "clock set %d:%d:%d %d %s %d\n", timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec, timeStruct.tm_mday, month[timeStruct.tm_mon], timeStruct.tm_year + 1900);
+	fprintf(containerFileStream, "enable\nclock set %d:%d:%d %d %s %d\nconfig t", timeStruct.tm_hour, timeStruct.tm_min, timeStruct.tm_sec, timeStruct.tm_mday, month[timeStruct.tm_mon], timeStruct.tm_year + 1900);
 
 	if(config.hostname)
 		fprintf(containerFileStream, "hostname %s\n", config.hostname);
