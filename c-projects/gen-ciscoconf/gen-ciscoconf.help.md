@@ -8,7 +8,9 @@ I hope this document accomplishes its goal.
 ## `hostname` Command
 Usage: `hostname STRING`
 
+```
 STRING: Host name.
+```
 
 Sets the hostname for the switch/router to `STRING`. Default value is "default".
 
@@ -22,14 +24,18 @@ Sets the password for USER-EXEC mode (`#` prompt) to `STRING`.
 ## `enable_secret` Command
 Usage: `enable_secret STRING`
 
+```
 STRING: Password.
+```
 
 Sets the secret (encrypted password) for USER-EXEC mode (`#` prompt) to `STRING`.
 
 ## `line_passwd` Command
 Usage: `line_passwd STRING`
 
+```
 STRING: Password.
+```
 
 Sets the password for the login console to `STRING`.
 
@@ -37,9 +43,11 @@ Sets the password for the login console to `STRING`.
 
 Usage: `vlan ID NAME PORT`
 
+```
 ID: VLAN ID number
 NAME: VLAN name
 PORTS: Port range assigned to VLAN ID
+```
 
 Creates a VLAN with VLAN number `ID`, name `NAME`, and assigns it to ports `PORTS`.
 
@@ -47,8 +55,10 @@ Creates a VLAN with VLAN number `ID`, name `NAME`, and assigns it to ports `PORT
 
 Usage: `ether ID PORTS MODE`
 
+```
 ID: EtherChannel number
 PORTS: Port range assigned to EtherChannel
 MODE: Communication mode for EtherChannel
+```
 
 Creates an EtherChannel interface with number `ID`, with `PORTS` assigned to it, and set to communication mode `MODE`
