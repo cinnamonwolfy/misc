@@ -9,7 +9,7 @@ I hope this document accomplishes its goal.
 Usage: `hostname STRING`
 
 ```
-STRING: Host name.
+STRING: Host name
 ```
 
 Sets the hostname for the switch/router to `STRING`. Default value is "default".
@@ -17,7 +17,7 @@ Sets the hostname for the switch/router to `STRING`. Default value is "default".
 ## `enable_passwd` Command
 Usage: `enable_passwd STRING`
 
-STRING: Password.
+STRING: Password
 
 Sets the password for USER-EXEC mode (`#` prompt) to `STRING`.
 
@@ -25,7 +25,7 @@ Sets the password for USER-EXEC mode (`#` prompt) to `STRING`.
 Usage: `enable_secret STRING`
 
 ```
-STRING: Password.
+STRING: Password
 ```
 
 Sets the secret (encrypted password) for USER-EXEC mode (`#` prompt) to `STRING`.
@@ -34,7 +34,7 @@ Sets the secret (encrypted password) for USER-EXEC mode (`#` prompt) to `STRING`
 Usage: `line_passwd STRING`
 
 ```
-STRING: Password.
+STRING: Password
 ```
 
 Sets the password for the login console to `STRING`.
