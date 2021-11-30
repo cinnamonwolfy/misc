@@ -15,12 +15,140 @@
 #include <ctime>
 #endif
 
+// pl32lib wrapper for FILE*
+typedef struct plfile {
+	FILE* fileptr; // File pointer for actual files
+	char* strbuf; // String pointer for stringstream
+	char* mode; // File open mode
+	size_t seekbyte; // Byte offset from the beginning of buffer
+	size_t bufsize; // Buffer size
+} plfile_t;
+
+plfile_t* plFOpen(char* filename, char* mode){
+	plfile_t* returnStruct = NULL;
+
+	if(mode){
+		returnStruct = malloc(sizeof(plfile_t));
+		if(!filename){
+			returnStruct->fileptr = NULL;
+		}else{
+			returnStruct->fileptr = fopen(filename, mode);
+		}
+
+		returnStruct->strbuf = NULL;
+		returnStruct->mode = malloc((strlen(mode)+1) * sizeof(char));
+		strcpy(returnStruct->mode, mode);
+		returnStruct->bufsize = 0;
+	}
+
+	return returnStruct;
+}
+
+int plFClose(plfile_t* ptr){
+	if(!fileptr){
+		free(ptr->strbuf);
+	}else{
+		fclose(ptr->fileptr);
+	}
+
+	free(ptr->mode);
+	free(ptr);
+}
+
+size_t plFRead(const void* ptr, size_t size, size_t nmemb, plfile_t* stream){
+	if(!stream->fileptr){
+		int elementAmnt = 0;
+		while(size * elementAmnt > stream->bufsize - stream->seekbyte){
+			elementAmnt++;
+		}
+		elementAmnt--;
+
+		if(!elementAmnt){
+			return 0;
+		}
+
+		memcpy(ptr, stream->strbuf + seekbyte, size * elementAmnt);
+		stream->seekbyte += size * elementAmnt;
+	}else{
+		return fread(ptr, size, nmemb, stream->fileptr);
+	}
+}
+
+size_t plFWrite(const void* ptr, size_t size, size_t nmemb, plfile_t* stream){
+	if(!stream->fileptr){
+		if(size * nmemb > stream->bufsize - stream->seekbyte){
+			void* tempPtr = realloc(stream->strbuf, stream->bufsize + size * nmemb);
+			if(!tempPtr){
+				return 0;
+			}
+
+			stream->strbuf = tempPtr;
+		}
+
+		memcpy(ptr, stream->strbuf + seekbyte, size * nmemb);
+		stream->seekbyte += size * elementAmnt;
+	}else{
+		return fwrite(ptr, size, nmemb, stream->fileptr);
+	}
+}
+
+char plFPutC(char ch, plfile_t* stream){
+	if(!plFWrite(&ch, sizeof(char), 1, stream)){
+		return '\0';
+	}else{
+		return ch;
+	}
+}
+
+char plFGetC(plfile_t* stream){
+	char ch;
+	if(!plFRead(&ch, sizeof(char), 1, stream)){
+		return '\0';
+	}else{
+		return ch;
+	}
+}
+
+int plFPuts(char* string, plfile_t* stream){
+	if(!plFWrite(string, strlen(string)+1, 1, stream)){
+		return 0;
+	}else{
+		return 1;
+	}
+}
+
+int plFGets(char* string, int num, plfile_t* stream){
+	if(!plFRead(string, num, 1, stream)){
+		return 0;
+	}else{
+		return 1;
+	}
+}
+
+int plFPrintF(plfile_t* stream, const char* fmt, ...){
+	va_list args;
+	va_start(args, fmt);
+
+	char buffer[4096]
+
+	vsprintf(buffer, fmt, args);
+}
+
+// Cisco interface struct
+typedef struct ciscoint {
+	char* ports;			// String containing the ports/interfaces
+	char* mode;			// Mode of the interface
+	char* allowed_vlans;		// Specifies allowed vlans over a trunk. Only used if mode == "trunk"
+	char* ip_addr;			/* Specifies IP address of the interface (VLANs for switches, everything else for routers).
+					IP version automatically determined */
+	char* sub_mask;			// Subnet mask for IP address. CIDR preferred, but not required
+} ciscoint_t;
+
 // Cisco VLAN table struct
 typedef struct ciscovlantable {
 	char** ids;			// ID array
 	char** names;			// Name array
-	char** ports;			// Ports array
-	char** mode;			// Port mode array
+	ciscoint_t* interfaces		// Interface array
 	size_t size;			// Size of Vlan Database
 } ciscovlantable_t;
 
@@ -77,16 +205,6 @@ void printVlanTableStruct(ciscovlantable_t* structptr){
 		printf("	Name: %s\n", structptr->names[i]);
 		printf("	Port(s): %s\n", structptr->ports[i]);
 		printf("	Mode: %s\n", structptr->mode[i]);
-	}
-}
-
-// Create a file stream for the output file. Incomplete
-FILE* createFileStream(bool isStringStream, char* filename){
-	if(isStringStream){
-		return NULL;
-		// TODO: do the funny
-	}else{
-		return fopen(filename, "w+");
 	}
 }
 
@@ -198,7 +316,7 @@ int main(int argc, const char* argv[]){
 			if(strcmp(argv[i], "-o") == 0){
 				config.filename = argv[i + 1];
 				i++;
-			}else if(strcmp(argv[i], "-h") == 0){
+			}else if(strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0){
 				printf("Cisco Config Generator, Version 0.54\n");
 				printf("(c)2021 pocketlinux32, Under GPLv3\n\n");
 				printf("Usage: %s [ --help | -o OUTPUT_FILE | -p | -v ] SOURCE_FILE \n\n", argv[0]);
