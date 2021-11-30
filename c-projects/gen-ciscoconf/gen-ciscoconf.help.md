@@ -1,5 +1,9 @@
 # `gen-ciscoconf` Syntax
 
+DISCLAIMER: This software is no longer updated in this repository. The new repository
+is pocketlinux32/gen-ciscoconf
+
+
 As requested by `kirby`, here is the docs for `gen-ciscoconf`. A lot of the commands
 are quite self-explanatory, but some of them are not trivial (such as the `vlan`
 and `ether` commands. This was made to help clarify the usage of this program.
