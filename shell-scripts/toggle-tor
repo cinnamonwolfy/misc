@@ -1,0 +1,24 @@
+#!/bin/sh
+
+case $1 in
+	"disable")
+		if [ -f ~/.ssh/config ]; then
+			mv ~/.ssh/config ~/.ssh/not-config
+			echo "Tor tunnel for Git has been disabled"
+		elif [ -f ~/.ssh/not-config ]; then
+			echo "Tor tunnel for Git is already disabled"
+		else
+			echo "File not found"
+		fi
+		;;
+	"enable")
+		if [ -f ~/.ssh/not-config ]; then
+			mv ~/.ssh/not-config ~/.ssh/config
+			echo "Tor tunnel for Git has been enabled"
+		elif [ -f ~/.ssh/config ]; then
+			echo "Tor tunnel for Git is already enabled"
+		else
+			echo "File not found"
+		fi
+		;;
+esac
