@@ -1,26 +1,27 @@
 #!/usr/bin/python3
 
 import socket
+rlpver = '0.01'
 
 def packetParser(data):
-	while data.find(b'\n') != len(data) or data.find(b'\n') != -1:
-		tempdata = data[0:data.find('\n')]
+	datatokens = data.split();
+
+	if()
+
+	print(repr(datatokens))
 
 	return 0
 
 if __name__ == "__main__":
-	databuffer = b''
+	data = b'begin'
 	socklisten = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	socklisten.bind(("localhost", 25755))
 	socklisten.listen(5)
-	print("Server initialized on port 25755")
+	print("PocketRLP Server initialized on port 25755")
 	while True:
 		(connection, address) = socklisten.accept()
-		data = connection.recv(1024)
+		print("Connection established with", address[0], "on port", address[1])
 
 		while data:
-			databuffer += data
-			data = connection.recv(1024)
-
-		packetParser(databuffer)
-		databuffer = b''
+			data = connection.recv(4096)
+			packetParser(data)
