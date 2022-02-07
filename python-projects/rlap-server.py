@@ -21,14 +21,13 @@ def packetParser(data):
 	global address
 	global rlapver
 
-	packettokens = data.split(b'\n')
+	if len(data) == 0:
+		return -1
 
-#	print(str(data.split(b'\n')))
-#	print(str(packettokens))
+	packettokens = data.split(b'\n')
 
 	for datatoken in packettokens:
 		datatokens = datatoken.split()
-#		print(repr(datatokens))
 
 		if not startconn:
 			if datatokens[0] != b'RLAP':
@@ -65,23 +64,32 @@ def packetParser(data):
 	return 0
 
 if __name__ == "__main__":
-	data = b'begin'
-
 	socklisten = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	socklisten.bind(("localhost", bport))
-	socklisten.listen(5)
+	socklisten.listen(10)
 	print("PocketRLAP Server, v0.01")
 	print("(c)2022 pocketlinux32, Under GPLv3")
 	print("Server initialized on port", bport)
 	while True:
-		(connection, address) = socklisten.accept()
-		print("Connection established with host", address[0], "on port", address[1])
+		try:
+			data = b'begin'
+			(connection, address) = socklisten.accept()
+			print("Connection established with host", address[0], "on port", address[1])
 
-		while data:
-			data = connection.recv(4096)
-			if packetParser(data):
-				break
+			while data:
+				data = connection.recv(4096)
+				if packetParser(data):
+					break
 
-		print("Ended connection with host", address[0])
-		startconn = False
-		datastream = False
+			print("Ended connection with host", address[0])
+			connection.shutdown(socket.SHUT_RDWR)
+			connection.close()
+			startconn = False
+			datastream = False
+		except KeyboardInterrupt:
+			print("Keyboard Interrupt detected")
+			print("Shutting down socket...")
+			socklisten.shutdown(socket.SHUT_RDWR)
+			socklisten.close()
+			print("Exiting...")
+			exit(0)
