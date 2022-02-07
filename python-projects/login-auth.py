@@ -4,38 +4,64 @@ import socket
 
 bport = 25755
 rlapver = b'0.01'
-startcomm = False
+startconn = False
+datastream = False
 connection = ('', '')
 address = ('', '')
 
 def packetSender(data):
+	global connection
+
 	if len(b'RLAP SERVER 0.01\n' + data) < 4096:
 		connection.send(b'RLAP SERVER 0.01\n' + data)
 
 def packetParser(data):
+	global startconn
+	global datastream
+	global address
+	global rlapver
+
 	packettokens = data.split(b'\n')
-	datatokens = packettokens.split()
 
-	if type(datatokens) is not list and not startcomm:
-		print("RLAP Error 1: Invalid packet")
-		packetSend(b'E1: RLAP_ERR_INV_PKT\nRLAP_ENDCONN')
-		return 1
-	elif type(datatokens) is list and not startcomm:
-		if datatokens[0] != b'RLAP':
-			print("RLAP Error 2: Incompatible protocol")
-			packetSend(b'E2: RLAP_ERR_INCOMPAT_PROT\nRLAP_ENDCONN')
-			return 2
-		else:
-			if datatokens[1] != b'CLIENT' or datatokens[2] != rlapver:
-				print("RLAP Error 3: Incompatible version")
-				packetSend(b'E3: RLAP_ERR_INCOMPAT_VER\nRLAP_ENDCONN')
-				return 3
+#	print(str(data.split(b'\n')))
+#	print(str(packettokens))
+
+	for datatoken in packettokens:
+		datatokens = datatoken.split()
+#		print(repr(datatokens))
+
+		if not startconn:
+			if datatokens[0] != b'RLAP':
+				print("RLAP Error 1: Incompatible protocol")
+				packetSender(b'E1: RLAP_ERR_INCOMPAT_PROT\nRLAP_ENDCONN')
+				return 1
 			else:
-				startcomm = True
-	else:
-		print("Data received, yet to write an actual authenticator")
+				if datatokens[1] != b'CLIENT' or datatokens[2] != rlapver:
+					print("RLAP Error 2: Incompatible version")
+					packetSender(b'E2: RLAP_ERR_INCOMPAT_VER\nRLAP_ENDCONN')
+					return 2
+				else:
+					print("Host", address[0], "is a compatible RLAP client")
+					startconn = True
+		else:
+			if datatokens[0] == b'RLAP_STARTLIST':
+				if not datastream:
+					print("Host", address[0], "has started a Data Stream")
+					datastream = True
+				else:
+					print("RLAP Warning 1: Data Stream already started")
+			elif datatokens[0] == b'RLAP_ENDLIST':
+				if datastream:
+					print("Host", address[0], "has ended a Data Stream")
+					datastream = False
+				else:
+					print("RLAP Warning 2: Data Stream already ended")
+			elif datatokens[0] == b'RLAP_ENDCONN':
+				print("Host", address[0], "requested to end connection")
+				return -1
+			else:
+				print("Data received, yet to write an actual authenticator")
 
-	print(repr(datatokens))
 	return 0
 
 if __name__ == "__main__":
@@ -57,4 +83,5 @@ if __name__ == "__main__":
 				break
 
 		print("Ended connection with host", address[0])
-		startcomm = False
+		startconn = False
+		datastream = False
