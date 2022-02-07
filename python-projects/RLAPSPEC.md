@@ -58,3 +58,16 @@ Finally, at the end of the list, the end of the data stream is declared
 ```
 RLAP_ENDCOMM
 ```
+
+### Other Types of RLAP Packets
+
+RLAP packets can carry more than just a list of items if you're the server.
+They can also carry protocol errors and commands
+```
+# Error
+E2: RLAP_ERR_INCOMPAT_PROT
+# Command
+RLAP_ENDCONN
+```
+
+

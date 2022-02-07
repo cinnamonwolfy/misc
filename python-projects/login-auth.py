@@ -9,27 +9,26 @@ connection = ('', '')
 address = ('', '')
 
 def packetSender(data):
-	if 
-	connection.send(b'RLAP SERVER 0.01\n' + data)
+	if len(b'RLAP SERVER 0.01\n' + data) < 4096:
+		connection.send(b'RLAP SERVER 0.01\n' + data)
 
 def packetParser(data):
-	datatokens = data.split();
-	global startcomm
-	global rlapver
+	packettokens = data.split(b'\n')
+	datatokens = packettokens.split()
 
 	if type(datatokens) is not list and not startcomm:
 		print("RLAP Error 1: Invalid packet")
-		packetSend(b'E1: RLAP_ERR_INV_PKT\n')
+		packetSend(b'E1: RLAP_ERR_INV_PKT\nRLAP_ENDCONN')
 		return 1
 	elif type(datatokens) is list and not startcomm:
 		if datatokens[0] != b'RLAP':
 			print("RLAP Error 2: Incompatible protocol")
-			pa(b'E2: RLAP_ERR_INCOMPAT_PROT')
+			packetSend(b'E2: RLAP_ERR_INCOMPAT_PROT\nRLAP_ENDCONN')
 			return 2
 		else:
 			if datatokens[1] != b'CLIENT' or datatokens[2] != rlapver:
 				print("RLAP Error 3: Incompatible version")
-				connection.send(b'E3: RLAP_ERR_INCOMPAT_VER')
+				packetSend(b'E3: RLAP_ERR_INCOMPAT_VER\nRLAP_ENDCONN')
 				return 3
 			else:
 				startcomm = True
