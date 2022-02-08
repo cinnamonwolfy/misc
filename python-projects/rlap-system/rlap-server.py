@@ -1,6 +1,14 @@
 #!/usr/bin/python3
+#
+# PocketRLAP, a Remote Login-Auth Protocol server
+# (c)2022 pocketlinux32, Under GPLv3
+# Version 0.01, Reference implementation
+#
+# Disclaimer: To use the internal authenticator, please run this program
+# as root or superuser
+#
 
-import socket
+import socket, spwd, crypt
 
 bport = 25755
 rlapver = b'0.01'
@@ -8,6 +16,14 @@ startconn = False
 datastream = False
 connection = ('', '')
 address = ('', '')
+
+def internalAuthenticator(user, password, passwdtype):
+	try:
+		profile = spwd.getspnam(user)
+	except KeyError:
+		print("InternalAuth: User is non-existent")
+
+	if passwdtype == b'HASHPASS':
 
 def packetSender(data):
 	global connection

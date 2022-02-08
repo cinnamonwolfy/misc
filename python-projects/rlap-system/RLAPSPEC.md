@@ -70,4 +70,8 @@ E1: RLAP_ERR_INCOMPAT_PROT
 RLAP_ENDCONN
 ```
 
+### RLAP Errors
 
+`RLAP_ERR_INCOMPAT_PROT` (Error 1): Client or Server sent an unknown or incompatible
+protocol packet
+`RLAP_ERR_INCOMPAT_VER` (Error 2): Client and Server versions are incompatible
