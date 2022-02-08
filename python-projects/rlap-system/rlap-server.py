@@ -128,6 +128,7 @@ if __name__ == "__main__":
 			data = b'begin'
 			(connection, address) = socklisten.accept()
 			print("Connection established with host", address[0], "on port", address[1])
+			packetSender(b'RLAP_STARTCONN')
 
 			while data:
 				data = connection.recv(4096)
