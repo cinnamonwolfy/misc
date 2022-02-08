@@ -4,7 +4,7 @@
 # (c)2022 pocketlinux32, Under GPLv3
 # Version 0.01, Reference implementation
 #
-# Disclaimer: To use the internal authenticator, please run this program
+# Notice: To use the internal authenticator, please run this program
 # as root or superuser
 #
 
@@ -17,13 +17,28 @@ datastream = False
 connection = ('', '')
 address = ('', '')
 
-def internalAuthenticator(user, password, passwdtype):
+def internalAuth(user, password, passwdtype):
 	try:
 		profile = spwd.getspnam(user)
+		if passwdtype == b'HASHPASS':
+			if password != profile[1]:
+				print("InternalAuth: Password is incorrect")
+				return 2
+		elif passwdtype == b'PLAINPASS':
+			if crypt.crypt(password, profile[1]) != profile[1]:
+				print("InternalAuth: Password is incorrect")
+				return 2
+		elif passwdtype == b'SSHPASS':
+			print("InternalAuth: Currently unimplemented, still finding a way to make this option secure")
+			return 2
+		else:
+			print("InternalAuth Error: Unrecognized password type")
+			return 3
+
+		return 0
 	except KeyError:
 		print("InternalAuth: User is non-existent")
-
-	if passwdtype == b'HASHPASS':
+		return 1
 
 def packetSender(data):
 	global connection
@@ -36,6 +51,9 @@ def packetParser(data):
 	global datastream
 	global address
 	global rlapver
+
+	packetbuf = b''
+	entrynum = 0
 
 	if len(data) == 0:
 		return -1
@@ -75,8 +93,27 @@ def packetParser(data):
 				print("Host", address[0], "requested to end connection")
 				return -1
 			else:
-				print("Data received, yet to write an actual authenticator")
+				print("Login data received, validating...")
+				if len(datatokens) != 4 or datatokens[0] != b'USER' or datatokens[2].find('PASS') == -1:
+					print("RLAP Error 3: Invalid data")
+					packetSender("E3: RLAP_ERR_INV_DATA\nRLAP_ENDCONN")
+					return 3
+				else:
+					print("Login data validated. Passed over to InternalAuth")
+					entrynum++
+					retval = internalAuth(datatokens[1], datatokens[3], datatokens[2])
+					if retval == 0:
+						packetbuff += b'ENTRY ' + bytearray(str(entrynum)) + b' USER YES PASS YES\n'
+					elif retval == 1:
+						packetbuff += b'ENTRY ' + bytearray(str(entrynum)) + b' USER NO\n'
+					elif retval == 2:
+						packetbuff += b'ENTRY ' + bytearray(str(entrynum)) + b' USER YES PASS NO\n'
+					else:
+						print("RLAP Error 4: InternalAuth had an error")
+						packetSender("E4: RLAP_ERR_INTAUTH_ERR\nRLAP_ENDCONN")
+						return 4
 
+	packetSender('RLAP_STARTLIST\n' + packetbuff + 'RLAP_ENDLIST\nRLAP_ENDCONN')
 	return 0
 
 if __name__ == "__main__":
