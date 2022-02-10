@@ -27,3 +27,6 @@ def packetParser(data):
 	global rlapver
 
 	
+
+if __name__ == '__main__':
+	

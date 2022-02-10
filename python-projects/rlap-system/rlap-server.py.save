@@ -77,7 +77,9 @@ def packetParser(data):
 					print("Host", address[0], "is a compatible RLAP client")
 					startconn = True
 		else:
-			if datatokens[0] == b'RLAP_STARTLIST':
+			if datatokens[0] == b'RLAP_STARTCONN'
+				print("Host", address[0], "accepted the connection")
+			elif datatokens[0] == b'RLAP_STARTLIST':
 				if not datastream:
 					print("Host", address[0], "has started a Data Stream")
 					datastream = True
@@ -113,7 +115,9 @@ def packetParser(data):
 						packetSender("E4: RLAP_ERR_INTAUTH_ERR\nRLAP_ENDCONN")
 						return 4
 
-	packetSender('RLAP_STARTLIST\n' + packetbuff + 'RLAP_ENDLIST\nRLAP_ENDCONN')
+	if packetbuf != b'':
+		packetSender('RLAP_STARTLIST\n' + packetbuff + 'RLAP_ENDLIST\nRLAP_ENDCONN')
+
 	return 0
 
 if __name__ == "__main__":
