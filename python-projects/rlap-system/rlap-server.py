@@ -11,7 +11,7 @@
 import socket, spwd, crypt
 
 bport = 25755
-rlapver = b'0.01'
+rlapver = b'1.0'
 startconn = False
 datastream = False
 isrlap = False

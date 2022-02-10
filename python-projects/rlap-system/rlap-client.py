@@ -8,7 +8,7 @@
 import socket
 
 bport = 25765
-rlapver = b'0.01'
+rlapver = b'1.0'
 socksend = socket.socket()
 isconnected = False
 datastream = False
