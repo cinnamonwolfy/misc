@@ -75,10 +75,10 @@ def packetParser(data):
 					return 2
 				else:
 					print("Host", address[0], "is a compatible RLAP client")
-					startconn = True
 		else:
 			if datatokens[0] == b'RLAP_STARTCONN'
 				print("Host", address[0], "accepted the connection")
+				startconn = True
 			elif datatokens[0] == b'RLAP_STARTLIST':
 				if not datastream:
 					print("Host", address[0], "has started a Data Stream")
@@ -136,7 +136,7 @@ if __name__ == "__main__":
 
 			while data:
 				data = connection.recv(4096)
-				if packetParser(data):
+				if packetParser(data.replace(b'\\n', b'\n')):
 					break
 
 			print("Ended connection with host", address[0])
