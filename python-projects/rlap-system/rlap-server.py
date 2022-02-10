@@ -14,6 +14,7 @@ bport = 25755
 rlapver = b'0.01'
 startconn = False
 datastream = False
+isrlap = False
 connection = ('', '')
 address = ('', '')
 
@@ -51,6 +52,7 @@ def packetParser(data):
 	global datastream
 	global address
 	global rlapver
+	global isrlap
 
 	packetbuf = b''
 	entrynum = 0
@@ -62,8 +64,10 @@ def packetParser(data):
 
 	for datatoken in packettokens:
 		datatokens = datatoken.split()
+		if len(datatokens) == 0:
+			break
 
-		if not startconn:
+		if not isrlap:
 			if datatokens[0] != b'RLAP':
 				print("RLAP Error 1: Incompatible protocol")
 				packetSender(b'E1: RLAP_ERR_INCOMPAT_PROT\nRLAP_ENDCONN')
@@ -74,10 +78,11 @@ def packetParser(data):
 					packetSender(b'E2: RLAP_ERR_INCOMPAT_VER\nRLAP_ENDCONN')
 					return 2
 				else:
-					print("Host", address[0], "is a compatible RLAP client")
+					print("Packet from host", address[0], "is an RLAP packet from a compatible client")
+					isrlap = True
 		else:
-			if datatokens[0] == b'RLAP_STARTCONN'
-				print("Host", address[0], "accepted the connection")
+			if datatokens[0] == b'RLAP_STARTCONN':
+				print("Host", address[0], "acknowledged the connection")
 				startconn = True
 			elif datatokens[0] == b'RLAP_STARTLIST':
 				if not datastream:
@@ -94,29 +99,32 @@ def packetParser(data):
 			elif datatokens[0] == b'RLAP_ENDCONN':
 				print("Host", address[0], "requested to end connection")
 				return -1
+			elif chr(datatokens[0][0]) == 'E':
+				print("Host had a protocol error")
+				return -1
 			else:
 				print("Login data received, validating...")
-				if len(datatokens) != 4 or datatokens[0] != b'USER' or datatokens[2].find('PASS') == -1:
+				if len(datatokens) != 4 or datatokens[0] != b'USER' or datatokens[2].find(b'PASS') == -1:
 					print("RLAP Error 3: Invalid data")
-					packetSender("E3: RLAP_ERR_INV_DATA\nRLAP_ENDCONN")
+					packetSender(b'E3: RLAP_ERR_INV_DATA\nRLAP_ENDCONN')
 					return 3
 				else:
 					print("Login data validated. Passed over to InternalAuth")
-					entrynum++
-					retval = internalAuth(datatokens[1], datatokens[3], datatokens[2])
+					entrynum = entrynum + 1
+					retval = internalAuth(datatokens[1].decode(), datatokens[3].decode(), datatokens[2])
 					if retval == 0:
-						packetbuff += b'ENTRY ' + bytearray(str(entrynum)) + b' USER YES PASS YES\n'
+						packetbuf += b'ENTRY ' + bytearray(str(entrynum), 'utf-8') + b' USER YES PASS YES\n'
 					elif retval == 1:
-						packetbuff += b'ENTRY ' + bytearray(str(entrynum)) + b' USER NO\n'
+						packetbuf += b'ENTRY ' + bytearray(str(entrynum), 'utf-8') + b' USER NO\n'
 					elif retval == 2:
-						packetbuff += b'ENTRY ' + bytearray(str(entrynum)) + b' USER YES PASS NO\n'
+						packetbuf += b'ENTRY ' + bytearray(str(entrynum), 'utf-8') + b' USER YES PASS NO\n'
 					else:
 						print("RLAP Error 4: InternalAuth had an error")
-						packetSender("E4: RLAP_ERR_INTAUTH_ERR\nRLAP_ENDCONN")
+						packetSender(b'E4: RLAP_ERR_INTAUTH_ERR\nRLAP_ENDCONN')
 						return 4
 
 	if packetbuf != b'':
-		packetSender('RLAP_STARTLIST\n' + packetbuff + 'RLAP_ENDLIST\nRLAP_ENDCONN')
+		packetSender(b'RLAP_STARTLIST\n' + packetbuf + b'RLAP_ENDLIST\nRLAP_ENDCONN')
 
 	return 0
 
@@ -135,8 +143,9 @@ if __name__ == "__main__":
 			packetSender(b'RLAP_STARTCONN')
 
 			while data:
-				data = connection.recv(4096)
-				if packetParser(data.replace(b'\\n', b'\n')):
+				isrlap = False
+				data = connection.recv(4096).replace(b'\\n', b'\n')
+				if packetParser(data):
 					break
 
 			print("Ended connection with host", address[0])
