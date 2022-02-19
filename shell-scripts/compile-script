@@ -1,0 +1,69 @@
+#!/bin/sh
+
+# init
+wget ftp.gnu.org/pub/gnu/binutils/binutils-2.38.tar.xz
+wget ftp.gnu.org/pub/gnu/gcc/gcc-11.2.0/gcc-11.2.0.tar.xz
+wget ftp.gnu.org/pub/gnu/gmp/gmp-6.2.1.tar.xz
+wget ftp.gnu.org/pub/gnu/mpc/mpc-1.2.1.tar.gz
+wget ftp.gnu.org/pub/gnu/mpfr/mpc-4.1.0.tar.xz
+wget kernel.org/pub/linux/kernel/5.x/linux-5.16.10.tar.xz
+wget musl.libc.org/releases/musl-1.2.2.tar.gz
+
+xz -dv *.xz
+gunzip -dv *.gz
+
+for i in $(ls); do
+	tar -xvf $i
+done
+
+rm -rf *.tar
+
+# binutils
+cd binutils-2.38
+mkdir build
+cd build
+../configure --prefix=/opt/cross --target=i686-pocket-linux-musl --diable-mutilib
+make -j2
+sudo make install
+cd ../..
+
+# gcc c/c++ compilers
+cd gcc-11.2.0
+mkdir build
+cd build
+../configure --prefix=/opt/cross --target=i686-pocket-linux-musl --disable-multilib --enable-languages=c,c++
+make -j2 all-gcc
+sudo make install-gcc
+cd ../..
+
+# linux headers
+cd linux-5.16.10
+make INSTALL_HDR_PATH=/opt/cross/i686-pocket-linux-musl headers_install
+sudo make INSTALL_HDR_PATH=/opt/cross/i686-pocket-linux-musl headers_install
+cd ../..
+
+# musl libc header files
+cd musl-1.2.2
+./configure --prefix=/opt/cross/i686-pocket-linux-musl --target=i686-pocket-linux-musl --disable-multilib
+sudo cp -r include /opt/cross/i686-pocket-linux-musl/
+make -j2
+sudo make install
+cd ..
+
+# gcc support lib
+cd gcc-11.2.0/build
+make -j2 all-target-gcc
+make install-target-gcc
+cd ../../
+
+# musl libc.so
+cd musl-1.2.2
+make -j2
+sudo make install
+cd ..
+
+# gcc c++ library
+cd gcc-11.2.0/build
+make -j2
+sudo make install
+cd ../..
