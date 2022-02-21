@@ -1,10 +1,13 @@
 #!/bin/sh
 rootdir=$(pwd)
-init=false
-binutils=false
-gcc1=false
-linux_headers=false
+init=true
+binutils=true
+gcc1=true
+linux_headers=true
 musl_headers=false
+libgcc=false
+musl_libc_so=false
+gcc_cpp=false
 
 # init
 if [ $init = true ]; then
@@ -13,7 +16,7 @@ if [ $init = true ]; then
 	wget ftp.gnu.org/pub/gnu/gmp/gmp-6.2.1.tar.xz
 	wget ftp.gnu.org/pub/gnu/mpc/mpc-1.2.1.tar.gz
 	wget ftp.gnu.org/pub/gnu/mpfr/mpfr-4.1.0.tar.xz
-	wget mirrors.edge.kernel.org/pub/linux/kernel/5.x/linux-5.16.10.tar.xz
+	wget mirrors.edge.kernel.org/pub/linux/kernel/v5.x/linux-5.16.10.tar.xz --no-check-certificate
 	wget musl.libc.org/releases/musl-1.2.2.tar.gz
 
 	xz -dv *.xz
@@ -64,26 +67,32 @@ fi
 if [ musl_headers = true ]; then
 	cd musl-1.2.2
 	./configure --prefix=/opt/cross/i686-pocket-linux-musl --target=i686-pocket-linux-musl --disable-multilib
-	sudo cp -r include /opt/cross/i686-pocket-linux-musl/
+	make install-headers
 	make -j2
 	sudo make install
 	cd $rootdir
 fi
 
 # gcc support lib
-cd gcc-11.2.0/build
-make -j2 all-target-libgcc
-make install-target-libgcc
-cd $rootdir
+if [ libgcc = true ]; then
+	cd gcc-11.2.0/build
+	make -j2 all-target-libgcc
+	make install-target-libgcc
+	cd $rootdir
+fi
 
 # musl libc.so
-cd musl-1.2.2
-make -j2
-sudo make install
-cd $rootdir
+if [ musl_libc_so = true ]; then
+	cd musl-1.2.2
+	make -j2
+	sudo make install
+	cd $rootdir
+fi
 
 # gcc c++ library
-cd gcc-11.2.0/build
-make -j2
-sudo make install
-cd $rootdir
+if [ gcc_cpp = true ]; then
+	cd gcc-11.2.0/build
+	make -j2
+	sudo make install
+	cd $rootdir
+fi
