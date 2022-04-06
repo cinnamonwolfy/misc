@@ -1,9 +1,9 @@
 #!/bin/sh
 rootdir=$(pwd)
 init=true
-binutils=true
-gcc1=true
-linux_headers=true
+binutils=false
+gcc1=false
+linux_headers=false
 musl_headers=false
 libgcc=false
 musl_libc_so=false
@@ -11,26 +11,10 @@ gcc_cpp=false
 
 # init
 if [ $init = true ]; then
-	wget ftp.gnu.org/pub/gnu/binutils/binutils-2.38.tar.xz
-	wget ftp.gnu.org/pub/gnu/gcc/gcc-11.2.0/gcc-11.2.0.tar.xz
-	wget ftp.gnu.org/pub/gnu/gmp/gmp-6.2.1.tar.xz
-	wget ftp.gnu.org/pub/gnu/mpc/mpc-1.2.1.tar.gz
-	wget ftp.gnu.org/pub/gnu/mpfr/mpfr-4.1.0.tar.xz
-	wget mirrors.edge.kernel.org/pub/linux/kernel/v5.x/linux-5.16.10.tar.xz --no-check-certificate
-	wget musl.libc.org/releases/musl-1.2.2.tar.gz
-
-	xz -dv *.xz
-	gunzip -dv *.gz
-
-	for i in $(ls); do
-		tar -xvf $i
+	./get-deps && cd tarballs && ../decompress-all
+	for i in $(ls | grep -v .tar); do
+		mv $i ..
 	done
-
-	rm -rf *.tar
-
-	ln $rootdir/gmp-6.2.1 gcc-11.2.0/gmp -s
-	ln $rootdir/mpc-1.2.1 gcc-11.2.0/mpc -s
-	ln $rootdir/mpfr-4.1.0 gcc-11.2.0/mpfr -s
 fi
 
 # binutils
@@ -46,6 +30,10 @@ fi
 
 # gcc c/c++ compilers
 if [ $gcc1 = true ]; then
+	ln $rootdir/gmp-6.2.1 gcc-11.2.0/gmp -s
+	ln $rootdir/mpc-1.2.1 gcc-11.2.0/mpc -s
+	ln $rootdir/mpfr-4.1.0 gcc-11.2.0/mpfr -s
+
 	cd gcc-11.2.0
 	mkdir -p build
 	cd build
