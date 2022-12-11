@@ -18,28 +18,28 @@ typedef struct plterm {
 } plterm_t;
 
 void plTermGetTermSize(plterm_t* termStruct){
-	char buffer[14];
+	char tempBuf[14];
 	write(STDOUT_FILENO, "\x1b[1J\0", 5);
 	write(STDOUT_FILENO, "\x1b[9999;9999H\0", 13);
-	read(STDOUT_FILENO, buffer, 13);
+	read(STDOUT_FILENO, tempBuf, 13);
 
-	char* startPos = buffer + 2;
-	char* midPos = strchr(buffer, ';');
-	char* endPos = strchr(buffer, 'R');
-	char* secondBuffer[5];
+	char* startPos = tempBuf + 2;
+	char* midPos = strchr(tempBuf, ';');
+	char* endPos = strchr(tempBuf, 'R');
+	char* secondTempBuf[5];
 	char* junk;
 
-	memcpy(secondBuffer, startPos, midPos - startPos);
-	secondBuffer[midPos - startPos + 1] = '\0';
-	termStruct->xSize = strtol(secondBuffer, &junk, 10);
+	memcpy(secondTempBuf, startPos, midPos - startPos);
+	secondTempBuf[midPos - startPos + 1] = '\0';
+	termStruct->xSize = strtol(secondTempBuf, &junk, 10);
 
-	memcpy(secondBuffer, midPos, endPos - midPos);
-	secondBuffer[endPos - midPos + 1] = '\0';
-	termStruct->ySize = strtol(secondBuffer, &junk, 10);
+	memcpy(secondTempBuf, midPos, endPos - midPos);
+	secondTempBuf[endPos - midPos + 1] = '\0';
+	termStruct->ySize = strtol(secondTempBuf, &junk, 10);
 }
 
-plterm_t* plTermInit(){
-	plterm_t* retStruct = plMTAllocE(sizeof(plterm_t));
+plterm_t* plTermInit(plmt_t* mt){
+	plterm_t* retStruct = plMTAllocE(mt, sizeof(plterm_t));
 	struct termios* og = &(retStruct->original);
 	struct termios* cur = &(retStruct->current);
 
@@ -60,10 +60,41 @@ plterm_t* plTermInit(){
 	return retStruct;
 }
 
-char plTermGetInput(){
-	char stuff[5];
+void plTermInputDriver(char** bufferPointer, char* inputBuffer){
+	size_t inputSize = strlen(inputBuffer);
+	if(inputBuffer[0] == 27){
+		*bufferPointer = plMTAllocE(mt, sizeof(char));
+		switch(inputBuffer[2]){
+			case 'A':
+				**bufferPoint = KEY_UP;
+				break;
+			case 'B':
+				**bufferPoint = KEY_DOWN;
+				break;
+			case 'C':
+				**bufferPoint = KEY_RIGHT;
+				break;
+			case 'D':
+				**bufferPoint = KEY_LEFT;
+				break;
+		}
+	}else{
+		*bufferPointer = plMTAllocE(mt, inputSize + 1);
+		memcpy(*bufferPointer, inputBuffer, inputSize);
+		(*bufferPointer)[inputSize] = '\0';
+	}
+}
+
+char* plTermGetInput(plmt_t* mt){
+	char tempBuf[5];
+	char* retVar;
 	ssize_t offset = 0;
 
-	offset = read(STDIN_FILENO, stuff, 4);
-	stuff[offset] = '\0';
+	offset = read(STDIN_FILENO, tempBuf, 4);
+	tempBuf[offset] = '\0';
+
+	if(offset == 0)
+		return NULL;
+
+	plTermInputDriver(&retVar, tempBuf);
 }
