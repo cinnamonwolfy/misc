@@ -26,14 +26,9 @@ int main(){
 
 	write(STDOUT_FILENO, "\x1b[1J\0", 5);
 
-	int iochar = 0;
-	while(iochar != 1){
-		char stuff[4];
-		int offset = 0;
-		while(read(STDIN_FILENO, &iochar, 1) > 0){
-			stuff[offset] = iochar;
-			offset++;
-		}
+	char stuff[5];
+	while(stuff[0] != 1){
+		ssize_t offset = read(STDIN_FILENO, stuff, 4);
 		stuff[offset] = '\0';
 		inputController(stuff);
 	}
