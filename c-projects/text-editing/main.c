@@ -26,11 +26,15 @@ int main(){
 
 	write(STDOUT_FILENO, "\x1b[1J\0", 5);
 
-	char stuff[5];
-	while(stuff[0] != 1){
+	char exitChr = 0;
+	while(exitChr != 1){
+		char stuff[5] = "";
 		ssize_t offset = read(STDIN_FILENO, stuff, 4);
 		stuff[offset] = '\0';
-		inputController(stuff);
+		exitChr = stuff[0];
+		if(offset != 0){
+			inputController(stuff);
+		}
 	}
 
 	tcsetattr(STDIN_FILENO, 0, &old);

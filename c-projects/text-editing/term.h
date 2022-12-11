@@ -61,9 +61,9 @@ plterm_t* plTermInit(){
 }
 
 char plTermGetInput(){
-	int iochar = 0;
 	char stuff[5];
-	int index
+	ssize_t offset = 0;
 
-	read(STDIN_FILENO, stuff, 4);
+	offset = read(STDIN_FILENO, stuff, 4);
+	stuff[offset] = '\0';
 }
