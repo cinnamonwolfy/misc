@@ -10,6 +10,8 @@ void inputController(char* keypress){
 		write(STDOUT_FILENO, keypress, 1);
 	}else{
 		write(STDOUT_FILENO, keypress, strlen(keypress));
+		if(strcmp(keypress, "\r") == 0)
+			write(STDOUT_FILENO, "\n", 1);
 	}
 }
 

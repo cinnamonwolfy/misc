@@ -11,10 +11,10 @@
 typedef struct plterm {
 	struct termios original;
 	struct termios current;
-	unsigned int xSize;
-	unsigned int ySize;
-	int xPos;
-	int yPos;
+	uint16_t xSize;
+	uint16_t ySize;
+	uint16_t xPos;
+	uint16_t yPos;
 } plterm_t;
 
 void plTermGetTermSize(plterm_t* termStruct){
@@ -36,6 +36,12 @@ void plTermGetTermSize(plterm_t* termStruct){
 	memcpy(secondTempBuf, midPos, endPos - midPos);
 	secondTempBuf[endPos - midPos + 1] = '\0';
 	termStruct->ySize = strtol(secondTempBuf, &junk, 10);
+
+	tempPtr[0] = '\x1b';
+	tempPtr[1] = '[';
+	snprintf(tempPtr + 3, 12, "%d;%d", tempBuf)
+
+	write(STDOUT_FILENO, tempBuf, 14);
 }
 
 plterm_t* plTermInit(plmt_t* mt){
@@ -60,7 +66,7 @@ plterm_t* plTermInit(plmt_t* mt){
 	return retStruct;
 }
 
-void plTermInputDriver(char** bufferPointer, char* inputBuffer){
+void plTermInputDriver(char** bufferPointer, char* inputBuffer, plmt_t* mt){
 	size_t inputSize = strlen(inputBuffer);
 	if(inputBuffer[0] == 27){
 		*bufferPointer = plMTAllocE(mt, sizeof(char));
@@ -96,5 +102,15 @@ char* plTermGetInput(plmt_t* mt){
 	if(offset == 0)
 		return NULL;
 
-	plTermInputDriver(&retVar, tempBuf);
+	plTermInputDriver(&retVar, tempBuf, mt);
+	return retVar;
+}
+
+void plTermMove(int x,  y){
+	write(STDOUT_FILENO, tempStr, strlen(tempStr));
+}
+
+void plTermPrint(char* string){
+	write(STDOUT_FILENO, string, strlen(string));
+	write(STDOUT_FILENO, "\0", 1);
 }
