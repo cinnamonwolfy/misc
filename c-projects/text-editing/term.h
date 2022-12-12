@@ -66,6 +66,13 @@ plterm_t* plTermInit(plmt_t* mt){
 	return retStruct;
 }
 
+void plTermStop(plterm_t* term, plmt_t* mt){
+	tcsetattr(STDIN_FILENO, 0, &(term->original));
+	tcsetattr(STDOUT_FILENO, 0, &(term->original));
+
+	plMTFree(mt, term);
+}
+
 void plTermInputDriver(char** bufferPointer, char* inputBuffer, plmt_t* mt){
 	size_t inputSize = strlen(inputBuffer);
 	if(inputBuffer[0] == 27){
