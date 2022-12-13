@@ -18,25 +18,40 @@ typedef struct plterm {
 	uint16_t yPos;
 } plterm_t;
 
-void plTermGetTermSize(plterm_t* termStruct){
-	char tempBuf[16];
-	write(STDOUT_FILENO, "\x1b[1J\0", 5);
+char* plTermGetSizeDbg(plterm_t* termStruct){
+	static char tempBuf[16] = "";
 	write(STDOUT_FILENO, "\x1b[9999;9999H\0", 13);
-	read(STDOUT_FILENO, tempBuf, 13);
+	write(STDOUT_FILENO, "\x1b[6n\0", 5);
+	ssize_t offset = read(STDIN_FILENO, tempBuf, 16);
+	if(offset < 0){
+		tcsetattr(STDOUT_FILENO, 0, &(termStruct->original));
+		write(STDOUT_FILENO, "\r", 1);
+		perror("plTermGetTermSize");
+		abort();
+	}
+
+	return tempBuf;
+}
+
+void plTermGetSize(plterm_t* termStruct){
+	char* tempBuf = plTermGetSizeDbg(termStruct);
 
 	char* startPos = tempBuf + 2;
-	char* midPos = strchr(tempBuf, ';');
-	char* endPos = strchr(tempBuf, 'R');
+	char* midPos = strchr(startPos, ';');
+	char* endPos = strchr(midPos, 'R');
 	char secondTempBuf[5];
 	char* junk;
 
 	memcpy(secondTempBuf, startPos, midPos - startPos);
 	secondTempBuf[midPos - startPos + 1] = '\0';
+	termStruct->ySize = strtol(secondTempBuf, &junk, 10);
+
+	memcpy(secondTempBuf, midPos + 1, endPos - (midPos + 1));
+	secondTempBuf[endPos - (midPos + 1)] = '\0';
 	termStruct->xSize = strtol(secondTempBuf, &junk, 10);
 
-	memcpy(secondTempBuf, midPos, endPos - midPos);
-	secondTempBuf[endPos - midPos + 1] = '\0';
-	termStruct->ySize = strtol(secondTempBuf, &junk, 10);
+	snprintf(tempBuf, 16, "\x1b[%d;%dH", termStruct->xPos, termStruct->yPos);
+	write(STDOUT_FILENO, tempBuf, 16);
 }
 
 plterm_t* plTermInit(plmt_t* mt){
@@ -46,18 +61,15 @@ plterm_t* plTermInit(plmt_t* mt){
 
 	tcgetattr(STDIN_FILENO, og);
 
-	cur->c_iflag &= ~(IGNBRK | BRKINT | PARMRK | ISTRIP | INLCR | IGNCR | ICRNL | IXON);
-	cur->c_oflag &= ~OPOST;
-	cur->c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
-	cur->c_cflag &= ~(CSIZE | PARENB);
-	cur->c_cflag |= CS8;
-
+	cur->c_cflag &= ~( ICANON | ECHO);
+	cur->c_cc[VMIN] = 1;
+	cur->c_cc[VTIME] = 0;
 	tcsetattr(STDIN_FILENO, TCSANOW, cur);
-	tcsetattr(STDIN_FILENO, TCSAFLUSH, cur);
-	tcsetattr(STDOUT_FILENO, TCSANOW, cur);
-	fcntl(STDIN_FILENO, F_SETFL, O_NONBLOCK);
 
-	plTermGetTermSize(retStruct);
+	retStruct->xPos = 1;
+	retStruct->yPos = 1;
+	write(STDOUT_FILENO, "\x1b[2J", 4);
+	plTermGetSize(retStruct);
 	return retStruct;
 }
 
@@ -71,7 +83,7 @@ void plTermStop(plterm_t* term, plmt_t* mt){
 void plTermInputDriver(unsigned char** bufferPointer, char* inputBuffer, plmt_t* mt){
 	size_t inputSize = strlen(inputBuffer);
 	if(inputBuffer[0] == 27){
-		*bufferPointer = plMTAllocE(mt, sizeof(char));
+		*bufferPointer = plMTAllocE(mt, sizeof(unsigned char));
 		switch(inputBuffer[2]){
 			case 'A':
 				**bufferPointer = KEY_UP;
