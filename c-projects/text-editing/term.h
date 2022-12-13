@@ -1,7 +1,8 @@
+#pragma once
+#include <pl32.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <termios.h>
-#include <string.h>
 
 #define KEY_UP 193
 #define KEY_DOWN 194
@@ -18,7 +19,7 @@ typedef struct plterm {
 } plterm_t;
 
 void plTermGetTermSize(plterm_t* termStruct){
-	char tempBuf[14];
+	char tempBuf[16];
 	write(STDOUT_FILENO, "\x1b[1J\0", 5);
 	write(STDOUT_FILENO, "\x1b[9999;9999H\0", 13);
 	read(STDOUT_FILENO, tempBuf, 13);
@@ -26,7 +27,7 @@ void plTermGetTermSize(plterm_t* termStruct){
 	char* startPos = tempBuf + 2;
 	char* midPos = strchr(tempBuf, ';');
 	char* endPos = strchr(tempBuf, 'R');
-	char* secondTempBuf[5];
+	char secondTempBuf[5];
 	char* junk;
 
 	memcpy(secondTempBuf, startPos, midPos - startPos);
@@ -36,12 +37,6 @@ void plTermGetTermSize(plterm_t* termStruct){
 	memcpy(secondTempBuf, midPos, endPos - midPos);
 	secondTempBuf[endPos - midPos + 1] = '\0';
 	termStruct->ySize = strtol(secondTempBuf, &junk, 10);
-
-	tempPtr[0] = '\x1b';
-	tempPtr[1] = '[';
-	snprintf(tempPtr + 3, 12, "%d;%d", tempBuf)
-
-	write(STDOUT_FILENO, tempBuf, 14);
 }
 
 plterm_t* plTermInit(plmt_t* mt){
@@ -73,22 +68,22 @@ void plTermStop(plterm_t* term, plmt_t* mt){
 	plMTFree(mt, term);
 }
 
-void plTermInputDriver(char** bufferPointer, char* inputBuffer, plmt_t* mt){
+void plTermInputDriver(unsigned char** bufferPointer, char* inputBuffer, plmt_t* mt){
 	size_t inputSize = strlen(inputBuffer);
 	if(inputBuffer[0] == 27){
 		*bufferPointer = plMTAllocE(mt, sizeof(char));
 		switch(inputBuffer[2]){
 			case 'A':
-				**bufferPoint = KEY_UP;
+				**bufferPointer = KEY_UP;
 				break;
 			case 'B':
-				**bufferPoint = KEY_DOWN;
+				**bufferPointer = KEY_DOWN;
 				break;
 			case 'C':
-				**bufferPoint = KEY_RIGHT;
+				**bufferPointer = KEY_RIGHT;
 				break;
 			case 'D':
-				**bufferPoint = KEY_LEFT;
+				**bufferPointer = KEY_LEFT;
 				break;
 		}
 	}else{
@@ -98,9 +93,9 @@ void plTermInputDriver(char** bufferPointer, char* inputBuffer, plmt_t* mt){
 	}
 }
 
-char* plTermGetInput(plmt_t* mt){
+unsigned char* plTermGetInput(plmt_t* mt){
 	char tempBuf[5];
-	char* retVar;
+	unsigned char* retVar;
 	ssize_t offset = 0;
 
 	offset = read(STDIN_FILENO, tempBuf, 4);
@@ -113,8 +108,12 @@ char* plTermGetInput(plmt_t* mt){
 	return retVar;
 }
 
-void plTermMove(int x,  y){
+void plTermMove(plterm_t* terminal, int x,  int y){
+	char tempStr[16];
+	snprintf(tempStr, 16, "\x1b[%d;%dH", x, y);
 	write(STDOUT_FILENO, tempStr, strlen(tempStr));
+	terminal->xPos = x;
+	terminal->yPos = y;
 }
 
 void plTermPrint(char* string){
