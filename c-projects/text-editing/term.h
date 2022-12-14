@@ -68,8 +68,8 @@ plterm_t* plTermInit(plmt_t* mt){
 
 	retStruct->xPos = 1;
 	retStruct->yPos = 1;
-	write(STDOUT_FILENO, "\x1b[2J", 4);
 	plTermGetSize(retStruct);
+	write(STDOUT_FILENO, "\x1b[2J", 4);
 	return retStruct;
 }
 

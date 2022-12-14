@@ -6,9 +6,9 @@ int main(){
 
 	plTermMove(thingie, 10, 10);
 	write(STDOUT_FILENO, "hewwo uwu\r\n\0", 13);
-	write(STDOUT_FILENO, "this is the size of the tewminaw uwu:", 37);
+	write(STDOUT_FILENO, "this is the size of the tewminaw uwu: ", 37);
 
-	char buffer[12];
+	char buffer[12] = "";
 	snprintf(buffer, 12, "%dx%d", thingie->xSize, thingie->ySize);
 	write(STDOUT_FILENO, buffer, 12);
 
