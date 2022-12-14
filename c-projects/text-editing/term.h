@@ -1,12 +1,12 @@
-#pragma once
+//#pragma once
 #include <pl32.h>
 #include <unistd.h>
 #include <termios.h>
 
-#define KEY_UP 193
-#define KEY_DOWN 194
-#define KEY_RIGHT 195
-#define KEY_LEFT 196
+#define KEY_UP 248
+#define KEY_DOWN 249
+#define KEY_RIGHT 250
+#define KEY_LEFT 251
 
 typedef struct plterm {
 	struct termios original;
@@ -72,11 +72,11 @@ plterm_t* plTermInit(plmt_t* mt){
 	return retStruct;
 }
 
-void plTermStop(plterm_t* term, plmt_t* mt){
-	tcsetattr(STDIN_FILENO, 0, &(term->original));
-	tcsetattr(STDOUT_FILENO, 0, &(term->original));
+void plTermStop(plterm_t* termStruct, plmt_t* mt){
+	tcsetattr(STDIN_FILENO, 0, &(termStruct->original));
+	tcsetattr(STDOUT_FILENO, 0, &(termStruct->original));
 
-	plMTFree(mt, term);
+	plMTFree(mt, termStruct);
 }
 
 void plTermInputDriver(unsigned char** bufferPointer, char* inputBuffer, plmt_t* mt){
@@ -119,15 +119,40 @@ unsigned char* plTermGetInput(plmt_t* mt){
 	return retVar;
 }
 
-void plTermMove(plterm_t* terminal, int x,  int y){
+void plTermMove(plterm_t* termStruct, int x,  int y){
 	char tempStr[16];
-	snprintf(tempStr, 16, "\x1b[%d;%dH", x, y);
+	snprintf(tempStr, 16, "\x1b[%d;%dH", y, x);
 	write(STDOUT_FILENO, tempStr, strlen(tempStr));
-	terminal->xPos = x;
-	terminal->yPos = y;
+	termStruct->xPos = x;
+	termStruct->yPos = y;
 }
 
-void plTermPrint(char* string){
+int plTermChangeColor(uint8_t color){
+	bool forecolorOutOfRange = (color < 30 && color > 1) || color > 37;
+	bool backcolorOutOfRange = (color < 40 && color > 1) || color > 47;
+
+	if(forecolorOutOfRange && backcolorOutOfRange)
+		return 1;
+
+	char colorStr[6];
+	snprintf(colorStr, 6, "\x1b[%dm", color);
+	write(STDOUT_FILENO, colorStr, 6);
+	write(STDOUT_FILENO, "\0", 1);
+	return 0;
+}
+
+void plTermPrint(plterm_t* termStruct, char* string){
 	write(STDOUT_FILENO, string, strlen(string));
 	write(STDOUT_FILENO, "\0", 1);
+
+	termStruct->xPos += strlen(string);
+	if(termStruct->xPos > termStruct->xSize){
+		termStruct->xPos -= termStruct->xSize;
+		termStruct->yPos++;
+	}
+}
+
+void plTermMovePrint(plterm_t* termStruct, int x, int y, char* string){
+	plTermMove(termStruct, x, y);
+	plTermPrint(termStruct, string);
 }

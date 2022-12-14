@@ -4,15 +4,17 @@ int main(){
 	plmt_t* mt = plMTInit(0);
 	plterm_t* thingie = plTermInit(mt);
 
-	plTermMove(thingie, 10, 10);
-	write(STDOUT_FILENO, "hewwo uwu\r\n\0", 13);
-	write(STDOUT_FILENO, "this is the size of the tewminaw uwu: ", 37);
+	plTermChangeColor(47);
+	plTermChangeColor(30);
+	plTermMovePrint(thingie, (thingie->xSize / 2) - 4, 1, "hewwo uwu");
+	plTermChangeColor(0);
+	plTermMovePrint(thingie, (thingie->xSize / 2) - 25, (thingie->ySize / 2) - 1, "this is the size of the tewminaw uwu: ");
 
 	char buffer[12] = "";
 	snprintf(buffer, 12, "%dx%d", thingie->xSize, thingie->ySize);
-	write(STDOUT_FILENO, buffer, 12);
+	plTermPrint(thingie, buffer);
 
-	write(STDOUT_FILENO, "\r\n\0", 3);
+	plTermMove(thingie, 1, thingie->ySize);
 	plTermStop(thingie, mt);
 	plMTStop(mt);
 	return 0;
