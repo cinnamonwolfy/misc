@@ -1,7 +1,6 @@
 #pragma once
 #include <pl32.h>
 #include <unistd.h>
-#include <fcntl.h>
 #include <termios.h>
 
 #define KEY_UP 193
