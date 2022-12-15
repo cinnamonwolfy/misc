@@ -8,7 +8,7 @@ int main(){
 	plTermChangeColor(30);
 	plTermMovePrint(thingie, (thingie->xSize / 2) - 4, 1, "hewwo uwu");
 	plTermChangeColor(0);
-	plTermMovePrint(thingie, (thingie->xSize / 2) - 25, (thingie->ySize / 2) - 1, "this is the size of the tewminaw uwu: ");
+	plTermMovePrint(thingie, (thingie->xSize / 2) - 24, thingie->ySize / 2, "this is the size of the tewminaw uwu: ");
 
 	char buffer[12] = "";
 	snprintf(buffer, 12, "%dx%d", thingie->xSize, thingie->ySize);
