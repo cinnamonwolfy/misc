@@ -14,7 +14,8 @@ int main(){
 	snprintf(buffer, 12, "%dx%d", thingie->xSize, thingie->ySize);
 	plTermPrint(thingie, buffer);
 
-	plTermMove(thingie, 1, thingie->ySize);
+	plMTFree(mt, plTermGetInput(mt));
+
 	plTermStop(thingie, mt);
 	plMTStop(mt);
 	return 0;

@@ -72,13 +72,6 @@ plterm_t* plTermInit(plmt_t* mt){
 	return retStruct;
 }
 
-void plTermStop(plterm_t* termStruct, plmt_t* mt){
-	tcsetattr(STDIN_FILENO, 0, &(termStruct->original));
-	tcsetattr(STDOUT_FILENO, 0, &(termStruct->original));
-
-	plMTFree(mt, termStruct);
-}
-
 void plTermInputDriver(unsigned char** bufferPointer, char* inputBuffer, plmt_t* mt){
 	size_t inputSize = strlen(inputBuffer);
 	if(inputBuffer[0] == 27){
@@ -155,4 +148,12 @@ void plTermPrint(plterm_t* termStruct, char* string){
 void plTermMovePrint(plterm_t* termStruct, int x, int y, char* string){
 	plTermMove(termStruct, x, y);
 	plTermPrint(termStruct, string);
+}
+
+void plTermStop(plterm_t* termStruct, plmt_t* mt){
+	plTermMovePrint(termStruct, 1, 1, "\x1b[0m\x1b[2J");
+	tcsetattr(STDIN_FILENO, 0, &(termStruct->original));
+	tcsetattr(STDOUT_FILENO, 0, &(termStruct->original));
+
+	plMTFree(mt, termStruct);
 }
