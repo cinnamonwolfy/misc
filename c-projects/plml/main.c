@@ -2,15 +2,15 @@
 #define PLML_FILE 1
 #define PLML_INVALID 2
 
-#define PLML_TYPE_STRING 3
-#define PLML_TYPE_BOOL 4
-#define PLML_TYPE_INT 5
-#define PLML_TYPE_HEADER 6
+#define PLML_TYPE_STRING 8
+#define PLML_TYPE_BOOL 9
+#define PLML_TYPE_INT 10
+#define PLML_TYPE_HEADER 11
 
 typedef struct pltoken {
 	string_t name;
 	int type;
-	string_t value;
+	memptr_t value;
 } pltoken_t;
 
 void plMLError(string_t name, int errNum, plmt_t* mt){
@@ -35,20 +35,70 @@ void plMLError(string_t name, int errNum, plmt_t* mt){
 	exit(errNum);
 }
 
+void plMLFreeToken(pltoken_t* token);
+
 pltoken_t* plMLParse(string_t string, plmt_t* mt){
-	plarray_t* tokenizedStr = plParser(lineBuffer, mt);
-	if(tokenizedStr->size != 3)
+	plarray_t* tokenizedStr = plParser(string, mt);
+	if(tokenizedStr->size != 3 || tokenizedStr->size != 1)
 		plMLError("plMLParse", PLML_INVALID, mt);
 
-	byte_t* basicStringStart = strchr(string, '"');
-	byte_t* literalStringStart = strchr(string, '\'');
+	string_t* tokenizedStrArr = tokenizedStr->array;
+	pltoken_t* returnToken = plMTAllocE(mt, sizeof(pltoken_t));
 
-	
+	if(tokenizedStr->size == 3){
+		byte_t* basicStringStart = strchr(string, '"');
+		byte_t* literalStringStart = strchr(string, '\'');
+		byte_t* beginningOfThirdToken  = strchr(string, '=') + 2;
+
+		returnToken->name = plMTAllocE(mt, strlen(tokenizedStrArr[0]) + 1);
+		strcpy(returnToken->name, tokenizedStrArr[0]);
+
+		if(basicStringStart != beginningOfThirdToken && literalStringStart != beginningOfThirdToken){
+			string_t leftoverStr = NULL;
+			int tempInt = strtol(tokenizedStrArr[2], &leftoverStr, 10);
+			if(leftoverStr != NULL && *leftoverStr != '\0'){
+				returnToken->type = PLML_TYPE_BOOL;
+				returnToken->value = plMTAllocE(mt, sizeof(bool));
+
+				if(strcmp(tokenizedStrArr[2], "true") == 0)
+					*(returnToken->value) = true;
+				else if(strcmp(tokenizedStrArr[2], "false") == 0)
+					*(returnToken->value) = false;
+				else
+					plMLError("plMLParse", PLML_INVALID, mt);
+			}else{
+				returnToken->type = PLML_TYPE_INT;
+				returnToken->value = plMTAllocE(mt, sizeof(int));
+				memcpy(returnToken->value, &tempInt, sizeof(int));
+			}
+		}else{
+			returnToken->type = PLML_TYPE_STRING;
+			returnToken->value = plMTAllocE(mt, strlen(tokenizedStrArr[2]) + 1);
+		}
+	}else{
+		returnToken->type = PLML_TYPE_HEADER;
+		returnToken->value = NULL;
+
+		byte_t* headerStart = strchr(tokenizedStrArr[0], '[') + 1;
+		byte_t* headerEnd = strchr(tokenizedStrArr[0], ']') - 1;
+		size_t nameSize = headerEnd - headerStart;
+
+		if(headerStart == NULL || headerEnd == NULL)
+			plMLError("plMLParse", PLML_INVALID, mt);
+
+		returnToken->name = plMTAllocE(mt, nameSize + 1);
+		memcpy(returnToken->name, headerStart, nameSize);
+	}
+
+	plMTFreeArray(tokenizedStr, true);
+	return returnToken;
 }
 
 int main(int argc, string_t* argv[]){
-	if(argc < 1)
+	if(argc < 1){
+		printf("Error: Not enough arguments\n");
 		return 1;
+	}
 
 	printf("Parsing PLML...");
 
@@ -59,8 +109,23 @@ int main(int argc, string_t* argv[]){
 	if(fileToParse == NULL)
 		plMLError("plFOpen", PLML_FILE);
 
-	while(plFGets(lineBuffer, 4095, fileToParse) != NULL)
-		plMLParse(lineBuffer, mt);
+	int i = 1;
+	while(plFGets(lineBuffer, 4095, fileToParse) != NULL){
+		pltoken_t* parsedToken = plMLParse(lineBuffer, mt);
+
+		printf("Token %d\n\n", i);
+		printf("Name: %s\n", parsedToken->name);
+		printf("Type: ");
+		switch(parsedToken->type){
+			case PLML_TYPE_STRING:
+				printf("String\n");
+				printf("Value: %s\n\n", (char*)parsedToken->value);
+				break;
+			case PLML_TYPE_BOOL:
+				printf("Bool\n");
+				printf("Value: ");
+		}
+	}
 
 	return 0;
 }
