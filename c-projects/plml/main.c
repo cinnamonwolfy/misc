@@ -11,6 +11,7 @@ typedef struct pltoken {
 	string_t name;
 	int type;
 	memptr_t value;
+	plmt_t* mt;
 } pltoken_t;
 
 void plMLError(string_t name, int errNum, plmt_t* mt){
@@ -35,7 +36,13 @@ void plMLError(string_t name, int errNum, plmt_t* mt){
 	exit(errNum);
 }
 
-void plMLFreeToken(pltoken_t* token);
+void plMLFreeToken(pltoken_t* token){
+	plMTFree(token->mt, token->name);
+	if(token->type != PLML_TYPE_HEADER)
+		plMTFree(token->mt, token->value);
+
+	plMTFree(token->mt, token);
+}
 
 pltoken_t* plMLParse(string_t string, plmt_t* mt){
 	plarray_t* tokenizedStr = plParser(string, mt);
@@ -44,6 +51,7 @@ pltoken_t* plMLParse(string_t string, plmt_t* mt){
 
 	string_t* tokenizedStrArr = tokenizedStr->array;
 	pltoken_t* returnToken = plMTAllocE(mt, sizeof(pltoken_t));
+	returnToken->mt = mt;
 
 	if(tokenizedStr->size == 3){
 		byte_t* basicStringStart = strchr(string, '"');
@@ -61,9 +69,9 @@ pltoken_t* plMLParse(string_t string, plmt_t* mt){
 				returnToken->value = plMTAllocE(mt, sizeof(bool));
 
 				if(strcmp(tokenizedStrArr[2], "true") == 0)
-					*(returnToken->value) = true;
+					*((bool*)returnToken->value) = true;
 				else if(strcmp(tokenizedStrArr[2], "false") == 0)
-					*(returnToken->value) = false;
+					*((bool*)returnToken->value) = false;
 				else
 					plMLError("plMLParse", PLML_INVALID, mt);
 			}else{
@@ -94,20 +102,20 @@ pltoken_t* plMLParse(string_t string, plmt_t* mt){
 	return returnToken;
 }
 
-int main(int argc, string_t* argv[]){
-	if(argc < 1){
+int main(int argc, string_t argv[]){
+	if(argc < 2){
 		printf("Error: Not enough arguments\n");
 		return 1;
 	}
 
-	printf("Parsing PLML...");
+	printf("Parsing PLML...\n\n");
 
 	plmt_t* mt = plMTInit(0);
 	plfile_t* fileToParse = plFOpen(argv[1], "r", mt);
 	char lineBuffer[4096];
 
 	if(fileToParse == NULL)
-		plMLError("plFOpen", PLML_FILE);
+		plMLError("plFOpen", PLML_FILE, mt);
 
 	int i = 1;
 	while(plFGets(lineBuffer, 4095, fileToParse) != NULL){
@@ -124,7 +132,21 @@ int main(int argc, string_t* argv[]){
 			case PLML_TYPE_BOOL:
 				printf("Bool\n");
 				printf("Value: ");
+				if(*((bool*)parsedToken->value))
+					printf("True\n\n");
+				else
+					printf("False\n\n");
+				break;
+			case PLML_TYPE_INT:
+				printf("Integer\n");
+				printf("Value: %i\n\n", *((int*)parsedToken->value));
+				break;
+			case PLML_TYPE_HEADER:
+				printf("Header\n\n");
+				break;
 		}
+
+		plMLFreeToken(parsedToken);
 	}
 
 	return 0;
