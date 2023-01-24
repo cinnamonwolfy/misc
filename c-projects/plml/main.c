@@ -46,7 +46,7 @@ void plMLFreeToken(pltoken_t* token){
 
 pltoken_t* plMLParse(string_t string, plmt_t* mt){
 	plarray_t* tokenizedStr = plParser(string, mt);
-	if(tokenizedStr->size != 3 || tokenizedStr->size != 1)
+	if(tokenizedStr->size != 3 && tokenizedStr->size != 1)
 		plMLError("plMLParse", PLML_INVALID, mt);
 
 	string_t* tokenizedStrArr = tokenizedStr->array;
@@ -82,13 +82,14 @@ pltoken_t* plMLParse(string_t string, plmt_t* mt){
 		}else{
 			returnToken->type = PLML_TYPE_STRING;
 			returnToken->value = plMTAllocE(mt, strlen(tokenizedStrArr[2]) + 1);
+			strcpy(returnToken->value, tokenizedStrArr[2]);
 		}
 	}else{
 		returnToken->type = PLML_TYPE_HEADER;
 		returnToken->value = NULL;
 
 		byte_t* headerStart = strchr(tokenizedStrArr[0], '[') + 1;
-		byte_t* headerEnd = strchr(tokenizedStrArr[0], ']') - 1;
+		byte_t* headerEnd = strchr(tokenizedStrArr[0], ']');
 		size_t nameSize = headerEnd - headerStart;
 
 		if(headerStart == NULL || headerEnd == NULL)
@@ -147,7 +148,9 @@ int main(int argc, string_t argv[]){
 		}
 
 		plMLFreeToken(parsedToken);
+		i++;
 	}
 
+	plMTStop(mt);
 	return 0;
 }
