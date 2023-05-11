@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <signal.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <errno.h>
@@ -11,6 +12,13 @@ uint8_t* fbmem;
 uint16_t displaySize[2];
 uint16_t scanlineSize;
 uint8_t color[4] = { 255, 255, 255, 255 };
+
+void signalHandler(int signal){
+	fputs("\x1b[?25h\0", stdout);
+	fflush(stdout);
+
+	exit(0);
+}
 
 void randColor(){
 	for(int i = 0; i < 4; i++)
@@ -44,6 +52,17 @@ void fillArea(uint16_t x, uint16_t y, uint16_t width, uint16_t height){
 }
 
 void init(){
+	fputs("\x1b[?25l\0", stdout);
+	fflush(stdout);
+
+	struct sigaction handler;
+	handler.sa_handler = signalHandler;
+	sigemptyset(&handler.sa_mask);
+	handler.sa_flags = 0;
+
+	sigaction(SIGTERM, &handler, NULL);
+	sigaction(SIGINT, &handler, NULL);
+
 	FILE* dispSize = fopen("/sys/class/graphics/fb0/virtual_size", "r");
         FILE* strideSize = fopen("/sys/class/graphics/fb0/stride", "r");
         char stringBuf[256] = "";
