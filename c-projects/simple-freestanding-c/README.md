@@ -12,7 +12,7 @@ invoker in x86 (both 32-bit and 64-bit)
 To run the demo, run this:
 
 ```c
-cc -nodefaultlibs -nostartfiles -fno-stack-protector -static main.c syscall-$(uname -m) -o test
+cc -nodefaultlibs -nostartfiles -fno-stack-protector -static main.c syscall-$(uname -m).s -o test
 ./test
 ```
 
