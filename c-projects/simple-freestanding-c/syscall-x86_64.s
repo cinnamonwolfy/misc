@@ -3,9 +3,6 @@
 .globl pl_syscall
 
 pl_syscall:
-	push		rbp
-	mov		rbp, rsp
-
 	mov		rax, rdi
 	mov		r11, rsi
 	mov		rcx, rdx
@@ -38,6 +35,4 @@ pl_syscall:
 	mov		rdi, [rcx]
 	args0:
 	syscall
-	mov		rsp, rbp
-	pop		rbp
 	ret

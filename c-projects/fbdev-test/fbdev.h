@@ -11,7 +11,7 @@ int fb;
 uint8_t* fbmem;
 uint16_t displaySize[2];
 uint16_t scanlineSize;
-uint8_t color[4] = { 255, 255, 255, 255 };
+uint8_t color[4] = { 255, 255, 255, 0 };
 
 void signalHandler(int signal){
 	fputs("\x1b[?25h\0", stdout);
@@ -21,7 +21,7 @@ void signalHandler(int signal){
 }
 
 void randColor(){
-	for(int i = 0; i < 4; i++)
+	for(int i = 0; i < 3; i++)
 		color[i] = (uint8_t)rand();
 }
 
