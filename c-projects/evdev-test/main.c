@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <libgen.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/time.h>
@@ -11,12 +13,17 @@ typedef struct linuxevent {
 	unsigned int value;
 } linuxevent_t;
 
-int main(int argc, const char* argv[]){
+int main(int argc, char* argv[]){
+	if(argc < 2){
+		printf("Error: No devices given\n");
+		exit(1);
+	}
+
 	linuxevent_t buffer;
-	int fd = open("/dev/input/event4", O_RDONLY);
+	int fd = open(argv[1], O_RDONLY);
 
 	printf("Event Reader for PLTK\n\n");
-	printf("Showing event readings for: event4\n\n");
+	printf("Showing event readings for: %s\n\n", basename(argv[1]));
 
 	while(1){
 		read(fd, &buffer, sizeof(buffer));
@@ -41,6 +48,8 @@ int main(int argc, const char* argv[]){
 					case SYN_DROPPED:
 						printf("Event buffer overrun\n");
 						break;
+					default:
+						printf("%d\n", buffer.code);
 				}
 				printf("Event value: %d\n", buffer.value);
 				break;
@@ -379,6 +388,11 @@ int main(int argc, const char* argv[]){
 					case REL_WHEEL:
 						printf("Relative Movement on Wheel\n");
 						break;
+					case REL_WHEEL_HI_RES:
+						printf("Relative Movement on Wheel, Higher Resolution\n");
+						break;
+					default:
+						printf("%d\n", buffer.code);
 				}
 
 				printf("Event value: %d\n", buffer.value);
@@ -389,14 +403,19 @@ int main(int argc, const char* argv[]){
 
 				switch(buffer.code){
 					case ABS_X:
-						printf("Absolute X axis position");
+						printf("Absolute X axis position\n");
 						break;
 					case ABS_Y:
-						printf("Absolute Y axis position");
+						printf("Absolute Y axis position\n");
 						break;
 					case ABS_WHEEL:
-						printf("Absolute Wheel position");
+						printf("Absolute Wheel position\n");
 						break;
+					case ABS_PRESSURE:
+						printf("Absolute pressure\n");
+						break;
+					default:
+						printf("%d\n", buffer.code);
 				}
 
 				printf("Event value: %d\n", buffer.value);
