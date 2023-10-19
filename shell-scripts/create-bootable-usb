@@ -1,0 +1,38 @@
+#!/bin/sh
+
+partition_drive(){
+	printf "o\\nn\\np\\n1\\n2048\\n-0\\nt\\n0c\\na\\nw" | fdisk -w always $1
+	mkdosfs -F32 $11
+}
+
+install_syslinux(){
+	syslinuxcmd="syslinux"
+	if [ -f /usr/lib/syslinux/bios/mbr.bin ]; then
+		dd if=/usr/lib/syslinux/bios/mbr.bin of=$1 bs=440 count=1 conv=notrunc
+	elif [ -f /usr/share/syslinux/mbr.bin ]; then
+		dd if=/usr/share/syslinux/bios/mbr.bin of=$1 bs=440 count=1 conv=notrunc
+	elif [ -f /opt/share/syslinux/bios/mbr.bin ]; then
+		dd if=/opt/share/syslinux/bios/mbr.bin of=$1 bs=440 count=1 conv=notrunc
+	else
+		curl https://mirrors.edge.kernel.org/pub/linux/utils/boot/syslinux/Testing/6.04/syslinux-6.04-pre1.tar.gz -o syslinux.tar.gz
+		mkdir syslinux && cd syslinux
+		gunzip -c ../syslinux.tar.gz | tar x --strip-components=1
+		dd if=./bios/mbr/mbr.bin of=$1 bs=440 count=1 conv=notrunc
+		syslinuxcmd="./bios/linux/syslinux"
+	fi
+
+	syslinux $11
+}
+
+if [ $(id -u) -ne 0 ]; then
+	echo "You are not root"
+	exit 1
+fi
+
+if [ "$1" = "" ]; then
+	echo "Please enter a drive"
+	exit 1
+fi
+
+partition_drive $1
+install_syslinux $1
